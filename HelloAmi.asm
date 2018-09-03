@@ -63,6 +63,7 @@ start:
 		movem.l	(sp)+,a6/a2/d5/d4/d3/d2
 		rts
 .conSpec:
+		dc.b	"CON:/10/200/50/"
 .dosName:
 		dc.b	"dos.library",0
 .textStr:
