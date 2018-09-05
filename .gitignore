@@ -1,0 +1,13 @@
+# build
+Disk.info
+HelloAmi
+HelloAmi.adf
+HelloAmi.info
+HelloAmi.lha
+
+# local
+*.bat
+*.h68
+*.idb
+*.idc
+*.py
