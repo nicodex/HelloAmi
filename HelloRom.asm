@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloRom.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$20E19C57               ; BB_CHKSUM (HelloRom.py)
+		dc.l	$78380AB0               ; BB_CHKSUM (HelloRom.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -47,9 +47,9 @@ sector0_1:
 .findInt:
 		;
 		; the "Hello World!" task needs the intuition.library
-		; (expected to be initialized during dos.library init)
+		; (expected to be initialized during system/dos init)
 		; 
-		lea	intuName(pc),a1
+		lea	intName(pc),a1
 		jsr	-$0060(a6)              ; _LVOFindResident
 		tst.l	d0
 		beq.b	.bootRet
@@ -63,10 +63,10 @@ sector0_1:
 		tst.l	d0
 		bmi.b	.bootErr
 		movea.l	d0,a1
-		move.l	$0010(a1),a0            ; ML_ME+0*ME_SIZE+ME_ADDR
+		movea.l	$0010(a1),a0            ; ML_ME+0*ME_SIZE+ME_ADDR
 		; skip STACK
 		lea	$1000(a0),a2            ; USRSTK_SIZE
-		; copy CODE (expected to be longword-aligned)
+		; copy task CODE (has to be longword-aligned)
 		lea	TaskCode(pc),a3
 		moveq	#(TaskData-TaskCode)/4-1,d0
 .memCopy:
@@ -77,7 +77,7 @@ sector0_1:
 		lea.l	$1000(a0),a0            ; USRSTK_SIZE
 		move.l	a0,$003E(a2)            ; TC_SPUPPER
 		move.l	a0,$0036(a2)            ; TC_SPREG
-		move.w	#$0185,$0008(a2)        ; LN_TYPE/LN_PRI = NT_TASK/-123
+		move.w	#$0188,$0008(a2)        ; LN_TYPE/LN_PRI = NT_TASK/-120
 		lea	taskName-TaskData(a2),a0
 		move.l	a0,$000A(a2)            ; LN_NAME
 		; NewList/AddHead
@@ -99,13 +99,17 @@ sector0_1:
 		; return value cannot be verified for pre-V36
 		moveq	#0,d0                   ; return OK
 		bra.b	.bootRet
-.expName:
-		dc.b	"expansion.library",0
+		;
+		; the MemList.ml_Node is not used by AllocEntry(),
+		; so we can overlap it with the name to save bytes
+		;
 .dosName:
 		dc.b	"dos.library",0
 	align	2
+.expName:
+		dc.b	"expa"
 .memList:
-		dcb.b	$0E,0                   ; LN_SIZE
+		dc.b	"nsion.library",0       ; LN_SIZE
 		dc.w	1                       ; ML_NUMENTRIES
 		; ML_ME+0*ME_SIZE+ME_REQS = MEMF_CLEAR!MEMF_PUBLIC
 		dc.l	$00010001
@@ -122,48 +126,50 @@ sector0_1:
 ;
 	align	2
 TaskCode:
-		movem.l	d3/d2/a6/a2/a0,-(sp)    ; A0 for stack space
+		movem.l	d4/d3/d2/a6/a2/a0,-(sp) ; A0 for stack space
 		movea.l	(4).w,a6                ; AbsExecBase
 		;
-		; the task waits (forever) for the dos.library
-		; init function to load the intuition.library!
+		; try (forever) to open the intuition.library
 		;
-		lea	intuName(pc),a2
-.openLib:
+		lea	intName(pc),a2
+.openInt:
 		; any version will do, no newer functions used
 		movea.l	a2,a1
 		jsr	-$0198(a6)              ; _LVOOldOpenLibrary
 		move.l	d0,(sp)
-		beq.b	.openLib
+		beq.b	.openInt
 		movea.l	d0,a6
 		;
 		; now try (forever) to open the "Hello World!" window
 		; (also creates a default public screen if not opened)
 		;
 		subq.l	#4,sp
-		moveq	#1,d2
-		move.l	#(64<<16)+29,d3
+		moveq	#1,d2                   ; GACT_RELVERIFY,
+		     	                        ; GTYP_BOOLGADGET,
+		     	                        ; WBENCHSCREEN,
+		     	                        ; signal bit
+		move.l	#(58<<16)+29,d3         ; left/top window and text
+		move.l	#$00000240,d4           ; IDCMP_GADGETUP!
+		      	                        ; IDCMP_CLOSEWINDOW
 .openWin:
 		lea	taskName(pc),a1
 		lea	TaskData+$005C(pc),a0   ; TC_SIZE
-		move.w	#-1,(a0)                ; it_FrontPen/it_BackPen = -1/-1
+		move.w	#-1,(a0)                ; it_FrontPen/it_BackPen
 		move.l	d3,$0004(a0)            ; it_LeftEdge/it_TopEdge
 		move.l	a1,$000C(a0)            ; it_IText
 		lea	$0014+$000C(a0),a1      ; it_SIZEOF+gg_Flags
 		move.w	#$0060,(a1)+            ; gg_Flags =
 		      	                        ; 	GFLG_RELWIDTH!
 		      	                        ; 	GFLG_RELHEIGHT
-		move.w	d2,(a1)+                ; gg_Activation = GACT_RELVERIFY
-		move.w	d2,(a1)                 ; gg_GadgetType = GTYP_BOOLGADGET
+		move.w	d2,(a1)+                ; gg_Activation
+		move.w	d2,(a1)                 ; gg_GadgetType
 		lea	-$0010(a1),a1           ; -gg_GadgetType
 		move.l	a0,$001A(a1)            ; gg_GadgetText
 		lea	$002C(a1),a0            ; gg_SIZEOF
 		move.l	d3,(a0)+                ; nw_LeftEdge/nw_TopEdge
 		move.l	#(253<<16)+79,(a0)+     ; nw_Width/nw_Height
-		move.w	#-1,(a0)+               ; nw_DetailPen/nw_BlockPen = -1/-1
-		move.l	#$00000240,(a0)+        ; nw_IDCMPFlags =
-		      	                        ; 	IDCMP_GADGETUP!
-		      	                        ; 	IDCMP_CLOSEWINDOW
+		move.w	#-1,(a0)+               ; nw_DetailPen/nw_BlockPen
+		move.l	d4,(a0)+                ; nw_IDCMPFlags
 		move.l	#$0000140E,(a0)+        ; nw_Flags =
 		      	                        ; 	WFLG_DRAGBAR!
 		      	                        ; 	WFLG_DEPTHGADGET!
@@ -203,8 +209,7 @@ TaskCode:
 		; ...until the user releases the mouse select button while
 		; the pointer is over the [close] or "Hello World!" gadget
 		;
-		andi.w	#$0240,d3               ; IDCMP_GADGETUP!
-		      	                        ; IDCMP_CLOSEWINDOW
+		and.l	d4,d3                   ; any of nw_IDCMPFlags
 		beq.b	.waitWin
 		; cleanup and return (task is removed and memory is freed)
 		movea.l	(sp)+,a0
@@ -213,16 +218,42 @@ TaskCode:
 		movea.l	a6,a1
 		movea.l	(4).w,a6                ; AbsExecBase
 		jsr	-$019E(a6)              ; _LVOCloseLibrary
-		moveq	#0,d0                   ; RETURN_OK
-		movem.l	(sp)+,a2/a6/d2/d3
+		movem.l	(sp)+,a2/a6/d2/d3/d4
 		rts
-intuName:
+intName:
 		dc.b	"intuition.library",0
 taskName:
-		dc.b	"Hello World!",0
+		dc.b	"Hello, World!",0
 	align	2
 TaskData:
-		dcb.b	2*512-(TaskData-sector0_1),0
+		dcb.b	2*512-(TaskData-sector0_1)-80,0
+HELLOROM_INFTD EQU ((2*512-(TaskData-sector0_1))/1000)
+HELLOROM_INFTM EQU ((2*512-(TaskData-sector0_1))-(1000*HELLOROM_INFTD))
+HELLOROM_INFHD EQU (HELLOROM_INFTM/100)
+HELLOROM_INFHM EQU (HELLOROM_INFTM-(100*HELLOROM_INFHD))
+HELLOROM_INFDD EQU (HELLOROM_INFHM/10)
+HELLOROM_INFDM EQU (HELLOROM_INFHM-(10*HELLOROM_INFDD))
+	ifeq HELLOROM_INFTD
+		dc.b	' '
+	else
+		dc.b	HELLOROM_INFTD+'0'
+	endif
+	ifeq HELLOROM_INFTD+HELLOROM_INFHD
+		dc.b	' '
+	else
+		dc.b	HELLOROM_INFHD+'0'
+	endif
+	ifeq HELLOROM_INFTD+HELLOROM_INFHD+HELLOROM_INFDD
+		dc.b	' '
+	else
+		dc.b	HELLOROM_INFDD+'0'
+	endif
+		dc.b	HELLOROM_INFDM+'0'
+		dc.b	    " bytes left "
+		dc.b	" for boot block,"
+		dc.b	" project at: htt"
+		dc.b	"ps://github.com/"
+		dc.b	"nicodex/HelloAmi"
 
 ;
 ; unused sectors
