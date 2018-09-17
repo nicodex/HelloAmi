@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloRom.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$78380AB0               ; BB_CHKSUM (HelloRom.py)
+		dc.l	$2ACF8EAD               ; BB_CHKSUM (HelloRom.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -11,6 +11,7 @@ sector0_1:
 ; 	entry point address in A0. The boot code is called after the
 ; 	strap module freed all resources (includes this two sectors)!
 ;
+		; MOVEM- order: A7/A6/A5/A4/A3/A2/A1/A0/D7/D6/D5/D4/D3/D2/D1/D0
 		movem.l	a3/a2/a0,-(sp)          ; thereafter: (SP) = A0
 		;
 		; this is part of the standard OS 2.x/3.x BootBlock
@@ -42,12 +43,13 @@ sector0_1:
 		;
 		moveq	#-1,d0
 .bootRet:
+		; MOVEM+ order: D0/D1/D2/D3/D4/D5/D6/D7/A0/A1/A2/A3/A4/A5/A6/A7
 		movem.l	(sp)+,a0/a2/a3
 		rts
 .findInt:
 		;
-		; the "Hello World!" task needs the intuition.library
-		; (expected to be initialized during system/dos init)
+		; the "Hello, World!" task needs the intuition.library
+		; (expected to be added during system and/or dos init)
 		; 
 		lea	intName(pc),a1
 		jsr	-$0060(a6)              ; _LVOFindResident
@@ -122,12 +124,14 @@ sector0_1:
 		; 	nw_SIZEOF               ; UI window
 		dc.l	$1000+(TaskData-TaskCode)+$005C+$0014+$002C+$0030;
 ;
-; "Hello World!" task
+; "Hello, World!" task
 ;
 	align	2
 TaskCode:
-		movem.l	d4/d3/d2/a6/a2/a0,-(sp) ; A0 for stack space
-		movea.l	(4).w,a6                ; AbsExecBase
+		; MOVEM- order: A7/A6/A5/A4/A3/A2/A1/A0/D7/D6/D5/D4/D3/D2/D1/D0
+		movem.l	a6/a5/a2/d4/d3/d2/d0,-(sp) ; D0 for stack space (lib)
+		movea.l	(4).w,a5                ; AbsExecBase
+		movea.l	a5,a6
 		;
 		; try (forever) to open the intuition.library
 		;
@@ -140,7 +144,7 @@ TaskCode:
 		beq.b	.openInt
 		movea.l	d0,a6
 		;
-		; now try (forever) to open the "Hello World!" window
+		; now try (forever) to open the "Hello, World!" window
 		; (also creates a default public screen if not opened)
 		;
 		subq.l	#4,sp
@@ -193,7 +197,7 @@ TaskCode:
 		;
 		; now wait, read, and reply all messages (forever)...
 		;
-		movea.l	(4).w,a6                ; AbsExecBase
+		movea.l	a5,a6
 		move.l	d2,d0
 		jsr	-$013E(a6)              ; _LVOWait
 		and.l	d2,d0
@@ -206,8 +210,8 @@ TaskCode:
 		move.l	$0014(a1),d3            ; im_Class
 		jsr	-$017A(a6)              ; _LVOReplyMsg
 		;
-		; ...until the user releases the mouse select button while
-		; the pointer is over the [close] or "Hello World!" gadget
+		; ...until the user releases the mouse select button over
+		; the window's close gadget or the "Hello, World!" gadget
 		;
 		and.l	d4,d3                   ; any of nw_IDCMPFlags
 		beq.b	.waitWin
@@ -216,9 +220,10 @@ TaskCode:
 		movea.l	(sp)+,a6
 		jsr	-$0048(a6)              ; _LVOCloseWindow
 		movea.l	a6,a1
-		movea.l	(4).w,a6                ; AbsExecBase
+		movea.l	a5,a6
 		jsr	-$019E(a6)              ; _LVOCloseLibrary
-		movem.l	(sp)+,a2/a6/d2/d3/d4
+		; MOVEM+ order: D0/D1/D2/D3/D4/D5/D6/D7/A0/A1/A2/A3/A4/A5/A6/A7
+		movem.l	(sp)+,d2/d3/d4/a2/a5/a6
 		rts
 intName:
 		dc.b	"intuition.library",0
