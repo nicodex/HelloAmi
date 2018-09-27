@@ -2,3 +2,4 @@
 *.adf binary
 *.asm text eol=lf
 *.info binary
+*.py text eol=lf

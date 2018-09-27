@@ -6,9 +6,14 @@
 		dc.l	0               ; do_Gadget+gg_NextGadget
 		dc.w	0,0             ; do_Gadget+gg_LeftEdge/gg_TopEdge
 		dc.w	48,18+1         ; do_Gadget+gg_Width/gg_Height
-		dc.w	$0004!$0001     ; do_Gadget+gg_Flags = GFLG_GADGIMAGE!GFLG_GADGBACKFILL
-		dc.w	$0001!$0002     ; do_Gadget+gg_Activation = GACT_RELVERIFY!GACT_IMMEDIATE
-		dc.w	$0001           ; do_Gadget+gg_GadgetType = GTYP_BOOLGADGET
+		dc.w	$0004!$0001     ; do_Gadget+gg_Flags =
+		    	                ; 	GFLG_GADGIMAGE!
+		    	                ; 	GFLG_GADGBACKFILL
+		dc.w	$0001!$0002     ; do_Gadget+gg_Activation =
+		    	                ; 	GACT_RELVERIFY!
+		    	                ; 	GACT_IMMEDIATE
+		dc.w	$0001           ; do_Gadget+gg_GadgetType =
+		    	                ; 	GTYP_BOOLGADGET
 		dc.l	-1              ; do_Gadget+gg_GadgetRender = DOSTRUE
 		dc.l	0               ; do_Gadget+gg_SelectRender = DOSFALSE
 		dc.l	0               ; do_Gadget+gg_GadgetText
@@ -39,7 +44,16 @@
 		dc.w	400,100         ; dd_NewWindow.nw_Width/nw_Height
 		dc.b	-1,-1           ; dd_NewWindow.nw_DetailPen/nw_BlockPen
 		dc.l	0               ; dd_NewWindow.nw_IDCMPFlags
-		dc.l	$0000127F       ; dd_NewWindow.nw_Flags = WFLG_SIZEGADGET!WFLG_DRAGBAR!WFLG_DEPTHGADGET!WFLG_CLOSEGADGET!WFLG_SIZEBRIGHT!WFLG_SIZEBBOTTOM!WFLG_SIMPLE_REFRESH!WFLG_REPORTMOUSE!WFLG_ACTIVATE
+		dc.l	$0000127F       ; dd_NewWindow.nw_Flags =
+		    	                ; 	WFLG_SIZEGADGET!
+		    	                ; 	WFLG_DRAGBAR!
+		    	                ; 	WFLG_DEPTHGADGET!
+		    	                ; 	WFLG_CLOSEGADGET!
+		    	                ; 	WFLG_SIZEBRIGHT!
+		    	                ; 	WFLG_SIZEBBOTTOM!
+		    	                ; 	WFLG_SIMPLE_REFRESH!
+		    	                ; 	WFLG_REPORTMOUSE!
+		    	                ; 	WFLG_ACTIVATE
 		dc.l	0               ; dd_NewWindow.nw_FirstGadget
 		dc.l	0               ; dd_NewWindow.nw_CheckMark
 		dc.l	0               ; dd_NewWindow.nw_Title

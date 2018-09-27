@@ -3,11 +3,11 @@ Disk.info
 HelloAmi
 HelloAmi.adf
 HelloAmi.info
-HelloAmi.lha
+HelloAmi*.lha
 
 # local
 *.bat
 *.h68
 *.idb
 *.idc
-*.py
+cstruct

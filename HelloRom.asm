@@ -275,9 +275,9 @@ sector880:
 		dc.l	0                       ; rb_SeqNum
 		dc.l	72                      ; rb_HTSize
 		dc.l	0                       ; rb_Nothing1
-		dc.l	$2247A76D               ; rb_Checksum
+		dc.l	$2247A76F               ; rb_Checksum
 		dcb.l	72,0                    ; rb_HashTable
-		dc.l	1                       ; TD_SECTOR+vrb_BitmapFlag
+		dc.l	-1                      ; TD_SECTOR+vrb_BitmapFlag
 		dc.l	881                     ; TD_SECTOR+vrb_Bitmap
 		dcb.l	25-1,0                  
 		dc.l	0                       ; TD_SECTOR+vrb_BitExtend
