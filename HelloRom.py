@@ -648,7 +648,7 @@ def main(argv):
         adf_add_file(adf, blocks, bitmap,
         adf_mkdir(adf, blocks, bitmap, root, 'S', mdays),
                                            'S/Startup-Sequence', mdays,
-            PROT_ARCHIVE | PROT_SCRIPT |
+            PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
             PROT_GRP_WRITE | PROT_GRP_READ |
             PROT_OTR_WRITE | PROT_OTR_READ)
         
