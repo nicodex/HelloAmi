@@ -3,11 +3,12 @@ Disk.info
 HelloAmi
 HelloAmi.adf
 HelloAmi.info
-HelloAmi*.lha
+C/LoadWB
 
 # local
 *.bat
 *.h68
 *.idb
 *.idc
+*.rp9
 cstruct
