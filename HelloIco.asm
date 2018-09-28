@@ -5,7 +5,7 @@
 		dc.w	1               ; do_Version = WB_DISKVERSION
 		dc.l	0               ; do_Gadget+gg_NextGadget
 		dc.w	0,0             ; do_Gadget+gg_LeftEdge/gg_TopEdge
-		dc.w	48,18+1         ; do_Gadget+gg_Width/gg_Height
+		dc.w	48,18           ; do_Gadget+gg_Width/gg_Height
 		dc.w	$0004!$0001     ; do_Gadget+gg_Flags =
 		    	                ; 	GFLG_GADGIMAGE!
 		    	                ; 	GFLG_GADGBACKFILL
