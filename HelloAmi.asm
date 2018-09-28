@@ -98,10 +98,10 @@ HelloAmi:
 .conSpec:
 		; continued with .dosName as title to save bytes
 		; (1.x CON handlers need non-empty width/height)
-		dc.b	"CON:/10/200/50/"
+		dc.b	"CON:/9/253/79/"
 .dosName:
 		dc.b	"dos.library",0
 .textStr:
-		dc.b	"Hello World!",10
+		dc.b	"Hello, World!",10
 .textEnd:
 	align	2
