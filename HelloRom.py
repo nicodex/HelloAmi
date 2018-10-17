@@ -8,6 +8,10 @@ import string
 import struct
 import sys
 import time
+try:
+    from functools import reduce
+except ImportError:
+    pass
 
 import cstruct  # https://pypi.org/project/cstruct/
 
