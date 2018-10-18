@@ -4,6 +4,7 @@ HelloAmi
 HelloAmi.adf
 HelloAmi.info
 C/LoadWB
+C/EndCLI
 
 # local
 *.bat
