@@ -1,7 +1,7 @@
-; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloRom.asm
+; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloAmi.adf.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$2ACF8EAD               ; BB_CHKSUM (HelloRom.py)
+		dc.l	$2ACF8EAD               ; BB_CHKSUM (HelloAmi.adf.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -275,7 +275,7 @@ sector880:
 		dc.l	0                       ; rb_SeqNum
 		dc.l	72                      ; rb_HTSize
 		dc.l	0                       ; rb_Nothing1
-		dc.l	$2247A76F               ; rb_Checksum
+		dc.l	$2247A76F               ; rb_Checksum (HelloAmi.adf.py)
 		dcb.l	72,0                    ; rb_HashTable
 		dc.l	-1                      ; TD_SECTOR+vrb_BitmapFlag
 		dc.l	881                     ; TD_SECTOR+vrb_Bitmap
@@ -301,7 +301,7 @@ sector880:
 ; Bitmap for sectors 2-1759
 ;
 sector881:
-		dc.l	$C000C037               ; checksum
+		dc.l	$C000C037               ; checksum (HelloAmi.adf.py)
 		dcb.l	27,$FFFFFFFF            ; 2-865 unused
 		dc.l	$FFFF3FFF               ; 880/881 used
 		dcb.l	26,$FFFFFFFF            ; 898-1729 unused

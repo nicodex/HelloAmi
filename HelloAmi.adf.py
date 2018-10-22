@@ -637,7 +637,6 @@ def main(argv):
         adf_add_file(adf, blocks, bitmap, root, 'Disk.info', mdays)
         adf_add_file(adf, blocks, bitmap, root, 'HelloAmi', mdays, PROT_APERW)
         adf_add_file(adf, blocks, bitmap, root, 'HelloAmi.info', mdays)
-        
         dir = adf_mkdir(adf, blocks, bitmap, root, 'C', mdays)
         adf_add_file(adf, blocks, bitmap, dir, 'C/LoadWB', mdays, PROT_APERW)
         adf_add_file(adf, blocks, bitmap, dir, 'C/EndCLI', mdays, PROT_APERW)
@@ -645,12 +644,10 @@ def main(argv):
         adf_mkdir(adf, blocks, bitmap, root, 'Fonts', mdays)
         adf_mkdir(adf, blocks, bitmap, root, 'L', mdays)
         adf_mkdir(adf, blocks, bitmap, root, 'Libs', mdays)
-        adf_mkdir(adf, blocks, bitmap,
-        adf_mkdir(adf, blocks, bitmap, root, 'Prefs', mdays),
-                                             'Env-Archive', mdays)
-        adf_add_file(adf, blocks, bitmap,
-        adf_mkdir(adf, blocks, bitmap, root, 'S', mdays),
-                                           'S/Startup-Sequence', mdays,
+        dir = adf_mkdir(adf, blocks, bitmap, root, 'Prefs', mdays)
+        adf_mkdir(adf, blocks, bitmap, dir, 'Env-Archive', mdays)
+        dir = adf_mkdir(adf, blocks, bitmap, root, 'S', mdays)
+        adf_add_file(adf, blocks, bitmap, dir, 'S/Startup-Sequence', mdays,
             PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
             PROT_GRP_WRITE | PROT_GRP_READ |
             PROT_OTR_WRITE | PROT_OTR_READ)
