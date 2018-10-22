@@ -629,17 +629,17 @@ def main(argv):
                 (bitmap_checksum, bitmap.checksum))
         blocks[root.bitmap[0]] = bitmap
 
-        PROT_APERW = (
+        PROT_PARWED = (
             PROT_ARCHIVE | PROT_PURE |
             PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
             PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ)
 
         adf_add_file(adf, blocks, bitmap, root, 'Disk.info', mdays)
-        adf_add_file(adf, blocks, bitmap, root, 'HelloAmi', mdays, PROT_APERW)
+        adf_add_file(adf, blocks, bitmap, root, 'HelloAmi', mdays, PROT_PARWED)
         adf_add_file(adf, blocks, bitmap, root, 'HelloAmi.info', mdays)
         dir = adf_mkdir(adf, blocks, bitmap, root, 'C', mdays)
-        adf_add_file(adf, blocks, bitmap, dir, 'C/LoadWB', mdays, PROT_APERW)
-        adf_add_file(adf, blocks, bitmap, dir, 'C/EndCLI', mdays, PROT_APERW)
+        adf_add_file(adf, blocks, bitmap, dir, 'C/LoadWB', mdays, PROT_PARWED)
+        adf_add_file(adf, blocks, bitmap, dir, 'C/EndCLI', mdays, PROT_PARWED)
         adf_mkdir(adf, blocks, bitmap, root, 'Devs', mdays)
         adf_mkdir(adf, blocks, bitmap, root, 'Fonts', mdays)
         adf_mkdir(adf, blocks, bitmap, root, 'L', mdays)
