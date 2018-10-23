@@ -1,0 +1,4 @@
+[submodule "python-cstruct"]
+	path = python-cstruct
+	url = https://github.com/nicodex/python-cstruct.git
+	branch = python25_support

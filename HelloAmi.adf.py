@@ -13,6 +13,7 @@ try:
 except ImportError:
     pass
 
+sys.path.insert(0, 'python-cstruct')  # submodule
 import cstruct  # https://pypi.org/project/cstruct/
 
 
