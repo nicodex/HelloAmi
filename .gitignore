@@ -6,10 +6,15 @@ HelloAmi.info
 C/LoadWB
 C/EndCLI
 
+# dependencies
+cstruct
+vasm
+
 # local
 *.bat
+*.cmd
 *.h68
 *.idb
 *.idc
 *.rp9
-cstruct
+*.sh
