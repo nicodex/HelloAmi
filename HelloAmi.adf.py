@@ -634,7 +634,7 @@ class OFSDisk:
 
 
 class HelloAmi:
-    _DRAWER, _ASMBIN, _ASMEXE, _SCRIPT = range(4)
+    _DRAWER, _ASMBIN, _ASMEXE, _OPTBIN, _SCRIPT = range(5)
     _FILE = 'HelloAmi.adf'
     _LIST = (
         (_ASMBIN, 'Disk.info'),
@@ -645,6 +645,9 @@ class HelloAmi:
             (_ASMEXE, 'C/EndCLI'),)),
         (_DRAWER, 'Devs', ()),
         (_DRAWER, 'Fonts', ()),
+        (_DRAWER, 'L', ()),
+        (_DRAWER, 'Libs', (
+            (_OPTBIN, 'icon.library'),)),
         (_DRAWER, 'Prefs', (
             (_DRAWER, 'Env-Archive', ()),)),
         (_DRAWER, 'S', (
@@ -667,6 +670,10 @@ class HelloAmi:
                 PROT_ARCHIVE | PROT_PURE |
                 PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
                 PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ))
+        elif cls._OPTBIN == t:
+            p = n.replace('/', os.sep)
+            if os.path.isfile(p):
+                adf.add_file(dir, n, mdays)
         elif cls._SCRIPT == t:
             adf.add_file(dir, n, mdays, (
                 PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
