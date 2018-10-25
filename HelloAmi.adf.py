@@ -677,14 +677,17 @@ class HelloAmi:
         p = n.replace('/', os.sep)
         if not os.path.isfile(p):
             if not os.path.isfile(cls._vasmm68k_mot):
-                for v in glob.glob(cls._vasmm68k_mot + '*'):
-                    if os.access(v, os.X_OK):
-                        cls._vasmm68k_mot = v
+                for vasm in glob.glob(cls._vasmm68k_mot + '*'):
+                    if os.access(vasm, os.X_OK):
+                        cls._vasmm68k_mot = vasm
                         break
-            subprocess.check_call([cls._vasmm68k_mot, '-quiet',
-                '-Fbin' if cls._ASMBIN == t else '-Fhunkexe -pic -nosym',
-                '-o', p,
-                p + '.asm'])
+            args = [cls._vasmm68k_mot, '-quiet']
+            if cls._ASMBIN == t:
+                args.append('-Fbin')
+            else:
+                args.extend(('-Fhunkexe', '-pic', '-nosym'))
+            args.extend(('-o', p, p + '.asm'))
+            subprocess.check_call(args)
     @classmethod
     def _rm(cls, item):
         t, n = item[:2]
