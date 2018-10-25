@@ -1,6 +1,7 @@
 * text=auto
 *.adf binary
 *.asm text eol=lf
+*.fs-uae text eol=lf
 *.info binary
 *.py text eol=lf
 S/Startup-Sequence text eol=lf

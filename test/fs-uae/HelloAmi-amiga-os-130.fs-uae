@@ -1,0 +1,8 @@
+#!/usr/bin/env fs-uae
+
+[fs-uae]
+accuracy = -1
+amiga_model = A500
+floppy_drive_0 = ../../HelloAmi.adf
+floppy_drive_speed = 0
+kickstart_file = amiga-os-130.rom
