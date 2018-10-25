@@ -3,9 +3,11 @@
 import calendar
 import datetime
 import decimal
+import glob
 import os
 import string
 import struct
+import subprocess
 import sys
 import time
 try:
@@ -165,10 +167,10 @@ class BitmapBlock(cstruct.CStruct):
     
     @property
     def next_free(self):
-        for key in range(RootBlock.key, NUMTRACKS * NUMSECS):
+        for key in range((NUMTRACKS * NUMSECS) // 2, NUMTRACKS * NUMSECS):
             if self.__getitem__(key):
                 return key
-        for key in range(BOOTSECTS, RootBlock.key):
+        for key in range(BOOTSECTS, (NUMTRACKS * NUMSECS) // 2):
             if self.__getitem__(key):
                 return key
         return None
@@ -302,8 +304,6 @@ class RootBlock(cstruct.CStruct):
         int32_t            sub_type;    /* ST_ROOT */
     """
     
-    key = 880
-
     @property
     def checksum(self):
         return self.header.checksum
@@ -436,227 +436,286 @@ class FileDataBlock(cstruct.CStruct):
 assert FileDataBlock.size == TD_SECTOR
 
 
-def adf_read(adf, cls, key):
-    adf.seek(key * TD_SECTOR)
-    return cls(adf.read(cls.size))
-
-def adf_get(adf, blocks, key):
-    block = blocks.get(key)
-    if block is None:
-        if not key:
-            block = adf_read(adf, BootBlock, key)
-        else:
-            block = adf_read(adf, FileHeaderBlock, key)
-            if T_SHORT == block.header.block_type:
-                if ST_ROOT == block.sub_type:
-                    block = RootBlock(block.pack())
-                    if block.extension:
-                        raise Exception(
-                            'root extensions are not supported')
-                elif ST_USERDIR == block.sub_type:
-                    block = UserDirectoryBlock(block.pack())
-                    if block.extension:
-                        raise Exception(
-                            'dir extensions are not supported')
-                elif block.sub_type != ST_FILE:
-                    raise Exception(
-                        'unsupported short type %d in sector %d' %
-                        (block.sub_type, key))
-            elif T_DATA == block.header.block_type:
-                block = FileDataBlock(block.pack())
+class OFSDisk:
+    def _read_block(self, cls, key):
+        self._file.seek(key * TD_SECTOR)
+        return cls(self._file.read(cls.size))
+    
+    def _write_block(self, key, block):
+        self._file.seek(key * TD_SECTOR)
+        self._file.write(block.update_checksum().pack())
+    
+    def _get_block(self, key):
+        block = self._blocks.get(key)
+        if block is None:
+            if not key:
+                block = self._read_block(BootBlock, key)
             else:
-                raise Exception(
-                    'unsupported block type %d in sector %d' %
-                    (block.header.block_type, key))
-        checksum = block.checksum
-        if checksum != block.update_checksum().checksum:
-            print('checksum missmatch in block %d: $%08X -> $%08X' %
-                (key, checksum, block.checksum))
-        blocks[key] = block
-    return block
-
-def adf_get_path(adf, blocks, block):
-    name = ''
-    if block.parent:
-        name = block.name.get_string()
-        block = adf_get(adf, blocks, block.parent)
-        while block.parent:
-            name = block.name.get_string() + '/' + name
-            block = adf_get(adf, blocks, block.parent)
-    return block.name.get_string() + ':' + name
-
-def adf_add_file(adf, blocks, bitmap, dir, path, mdays=None, prot=None):
-    file_path = path.replace('/', os.sep)
-    file_name = os.path.split(file_path)[1]
-    file_size = os.path.getsize(file_path)
-    if mdays is None:
-        mdays = DateStamp.gmtime(os.path.getmtime(file_path))
-    if prot is None:
-        prot = (
-            PROT_EXECUTE |
-            PROT_ARCHIVE |
-            PROT_GRP_WRITE | PROT_GRP_READ |
-            PROT_OTR_WRITE | PROT_OTR_READ)
-    full, part = divmod(file_size, OFSFILEDATA_SIZE)
-    block_count = full + bool(part)
-    slot_count = min(TD_HTSIZE, block_count)
-    if block_count > slot_count:
-        raise Exception('file extension blocks are not implemented')
-    head = FileHeaderBlock(
-        header=BlockHeader(
-            block_type=T_SHORT,
-            own_key=bitmap.use_next(),
-            seq_num=block_count,
-            data_size=slot_count),
-        protect=prot,
-        byte_size=file_size,
-        days=mdays,
-        parent=dir.key,
-        sub_type=ST_FILE)
-    head.name.set_string(file_name)
-    name_hash = head.name.__hash__()
-    prev_key = dir.hash_table[name_hash]
-    if not prev_key:
-        dir.hash_table[name_hash] = head.key
-    else:
-        while True:
-            prev = adf_get(adf, blocks, prev_key)
-            if prev.name.__eq__(head.name):
-                raise Exception('%s already exists' %
-                    adf_get_path(adf, blocks, head))
-            prev_key = prev.hash_chain
-            if not prev_key:
-                prev.hash_chain = head.key
-                break
-    blocks[head.key] = head
-    file = open(file_path, 'rb')
-    try:
-        prev = head
-        snum = 1
-        left = file_size
-        while left > 0:
-            size = min(OFSFILEDATA_SIZE, left)
-            data = FileDataBlock(
-                header=BlockHeader(
-                    block_type=T_DATA,
-                    own_key=bitmap.use_next(),
-                    seq_num=snum,
-                    data_size=size)
-                )
-            file_data = struct.unpack(
-                '%dB' % data.header.data_size,
-                file.read(data.header.data_size))
-            for b in range(len(file_data)):
-                data.file_data[b] = file_data[b]
-            head.hash_table[TD_HTSIZE - snum] = data.key
-            blocks[data.key] = data
-            prev.header.next_block = data.key
-            prev = data
-            snum += 1
-            left -= size
-    finally:
-        file.close()
-    return head
-
-def adf_mkdir(adf, blocks, bitmap, dir, name, mdays=None):
-    if mdays is None:
-        mdays = DateStamp.gmtime()
-    block = UserDirectoryBlock(
-        header=BlockHeader(
-            block_type=T_SHORT,
-            own_key=bitmap.use_next()),
-        protect=(
-            PROT_ARCHIVE |
-            PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
-            PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ),
-        days=mdays,
-        parent=dir.key,
-        sub_type=ST_USERDIR)
-    block.name.set_string(name)
-    name_hash = block.name.__hash__()
-    prev_key = dir.hash_table[name_hash]
-    if not prev_key:
-        dir.hash_table[name_hash] = block.key
-    else:
-        while True:
-            prev = adf_get(adf, blocks, prev_key)
-            if prev.name.__eq__(block.name):
-                raise Exception('%s already exists' %
-                    adf_get_path(adf, blocks, block))
-            prev_key = prev.hash_chain
-            if not prev_key:
-                prev.hash_chain = block.key
-                break
-    blocks[block.key] = block
-    return block
-
-def adf_write(adf, key, block):
-    adf.seek(key * TD_SECTOR)
-    adf.write(block.update_checksum().pack())
-
-
-def main(argv):
-    adf = open('HelloAmi.adf' if len(argv) <= 1 else str(argv[1]), 'r+b')
-    try:
-        mdays = DateStamp.gmtime()
-        blocks = {}
-        
-        boot = adf_get(adf, blocks, 0)
-        if (not isinstance(boot, BootBlock) or
-            (boot.disk_type != BBNAME_DOS) or
-            (boot.dos_block != RootBlock.key)):
-            raise Exception('unsupported boot block')
-        
-        root = adf_get(adf, blocks, RootBlock.key)
-        if (not isinstance(root, RootBlock) or
-            (root.header.own_key != 0) or
-            (root.header.seq_num != 0) or
-            (root.header.data_size != TD_HTSIZE) or
-            (root.bitmap_flag == 0) or
-            (root.bitmap[0] == 0) or
-            (max(root.bitmap[1:]) != 0)):
+                block = self._read_block(FileHeaderBlock, key)
+                if T_SHORT == block.header.block_type:
+                    if ST_ROOT == block.sub_type:
+                        block = RootBlock(block.pack())
+                        block.key = key
+                        if block.extension:
+                            raise Exception(
+                                'root extensions are not supported')
+                    elif ST_USERDIR == block.sub_type:
+                        block = UserDirectoryBlock(block.pack())
+                        if block.extension:
+                            raise Exception(
+                                'dir extensions are not supported')
+                    elif block.sub_type != ST_FILE:
+                        raise Exception(
+                            'unsupported short type %d in sector %d' %
+                            (block.sub_type, key))
+                elif T_DATA == block.header.block_type:
+                    block = FileDataBlock(block.pack())
+                else:
+                    raise Exception(
+                        'unsupported block type %d in sector %d' %
+                        (block.header.block_type, key))
+            checksum = block.checksum
+            if checksum != block.update_checksum().checksum:
+                print('checksum missmatch in block %d: $%08X -> $%08X' %
+                    (key, checksum, block.checksum))
+            self._blocks[key] = block
+        return block
+    
+    def _get_path(self, block):
+        path = ''
+        if block.parent:
+            path = block.name.get_string()
+            block = self._get_block(block.parent)
+            while block.parent:
+                path = block.name.get_string() + '/' + path
+                block = self._get_block(block.parent)
+        return block.name.get_string() + ':' + path
+    
+    def __init__(self, file):
+        self._file = open(file, 'r+b')
+        self._blocks = {}
+        self._boot = self._get_block(0)
+        if ((self._boot.disk_type != BBNAME_DOS) or
+            (self._boot.dos_block < BOOTSECTS) or
+            (self._boot.dos_block >= NUMTRACKS * NUMSECS)):
+            raise Exception('unsupported disk format')
+        self._root = self._get_block(self._boot.dos_block)
+        if (not isinstance(self._root, RootBlock) or
+            (self._root.header.own_key != 0) or
+            (self._root.header.seq_num != 0) or
+            (self._root.header.data_size != TD_HTSIZE) or
+            (self._root.bitmap_flag == 0) or
+            (self._root.bitmap[0] == 0) or
+            (max(self._root.bitmap[1:]) != 0)):
             raise Exception('unsupported root block')
-        root.days = mdays
-        root.disk_mod = mdays
-        root.create_days = mdays
-        
-        bitmap = adf_read(adf, BitmapBlock, root.bitmap[0])
-        if ((bitmap.__getitem__(boot.dos_block)) or
-            (bitmap.__getitem__(root.bitmap[0]))):
+        self._bitmap = self._read_block(BitmapBlock, self._root.bitmap[0])
+        if ((self._bitmap.__getitem__(self._root.key)) or
+            (self._bitmap.__getitem__(self._root.bitmap[0]))):
             raise Exception('invalid bitmap block')
-        checksum = bitmap.checksum
-        if checksum != bitmap.update_checksum().checksum:
+        bitmap_checksum = self._bitmap.checksum
+        if bitmap_checksum != self._bitmap.update_checksum().checksum:
             print('bitmap checksum missmatch: $%08X -> $%08X' %
                 (bitmap_checksum, bitmap.checksum))
-        blocks[root.bitmap[0]] = bitmap
+        self._blocks[self._root.bitmap[0]] = self._bitmap
+    
+    @property
+    def root(self):
+        return self._root
+    
+    def mkdir(self, dir, name, mdays=None):
+        if dir is None:
+            dir = self._root
+        if mdays is None:
+            mdays = DateStamp.gmtime()
+        block = UserDirectoryBlock(
+            header=BlockHeader(
+                block_type=T_SHORT,
+                own_key=self._bitmap.use_next()),
+            protect=(
+                PROT_ARCHIVE |
+                PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
+                PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ),
+            days=mdays,
+            parent=dir.key,
+            sub_type=ST_USERDIR)
+        block.name.set_string(name)
+        name_hash = block.name.__hash__()
+        prev_key = dir.hash_table[name_hash]
+        if not prev_key:
+            dir.hash_table[name_hash] = block.key
+        else:
+            while True:
+                prev = self._get_block(prev_key)
+                if prev.name.__eq__(block.name):
+                    raise Exception('%s already exists' % self._get_path(block))
+                prev_key = prev.hash_chain
+                if not prev_key:
+                    prev.hash_chain = block.key
+                    break
+        self._blocks[block.key] = block
+        return block
+    
+    def add_file(self, dir, file, mdays=None, prot=None):
+        if dir is None:
+            dir = self._root
+        file_path = file.replace('/', os.sep)
+        file_name = os.path.split(file_path)[1]
+        file_size = os.path.getsize(file_path)
+        if mdays is None:
+            mdays = DateStamp.gmtime(os.path.getmtime(file_path))
+        if prot is None:
+            prot = (
+                PROT_EXECUTE |
+                PROT_ARCHIVE |
+                PROT_GRP_WRITE | PROT_GRP_READ |
+                PROT_OTR_WRITE | PROT_OTR_READ)
+        block_full, block_part = divmod(file_size, OFSFILEDATA_SIZE)
+        block_count = block_full + bool(block_part)
+        slot_count = min(TD_HTSIZE, block_count)
+        if block_count > slot_count:
+            raise Exception('file extension blocks are not implemented')
+        head = FileHeaderBlock(
+            header=BlockHeader(
+                block_type=T_SHORT,
+                own_key=self._bitmap.use_next(),
+                seq_num=block_count,
+                data_size=slot_count),
+            protect=prot,
+            byte_size=file_size,
+            days=mdays,
+            parent=dir.key,
+            sub_type=ST_FILE)
+        head.name.set_string(file_name)
+        name_hash = head.name.__hash__()
+        prev_key = dir.hash_table[name_hash]
+        if not prev_key:
+            dir.hash_table[name_hash] = head.key
+        else:
+            while True:
+                prev = self._get_block(prev_key)
+                if prev.name.__eq__(head.name):
+                    raise Exception('%s already exists' % self._get_path(head))
+                prev_key = prev.hash_chain
+                if not prev_key:
+                    prev.hash_chain = head.key
+                    break
+        self._blocks[head.key] = head
+        f = open(file_path, 'rb')
+        try:
+            prev = head
+            snum = 1
+            left = file_size
+            while left > 0:
+                size = min(OFSFILEDATA_SIZE, left)
+                data = FileDataBlock(
+                    header=BlockHeader(
+                        block_type=T_DATA,
+                        own_key=self._bitmap.use_next(),
+                        seq_num=snum,
+                        data_size=size)
+                    )
+                fdata = struct.unpack('%dB' % data.header.data_size,
+                    f.read(data.header.data_size))
+                for b in range(len(fdata)):
+                    data.file_data[b] = fdata[b]
+                head.hash_table[TD_HTSIZE - snum] = data.key
+                self._blocks[data.key] = data
+                prev.header.next_block = data.key
+                prev = data
+                snum += 1
+                left -= size
+        finally:
+            f.close()
+        return head
+    
+    def save(self):
+        for key, block in self._blocks.items():
+            self._write_block(key, block)
 
-        PROT_PARWED = (
-            PROT_ARCHIVE | PROT_PURE |
-            PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
-            PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ)
 
-        adf_add_file(adf, blocks, bitmap, root, 'Disk.info', mdays)
-        adf_add_file(adf, blocks, bitmap, root, 'HelloAmi', mdays, PROT_PARWED)
-        adf_add_file(adf, blocks, bitmap, root, 'HelloAmi.info', mdays)
-        dir = adf_mkdir(adf, blocks, bitmap, root, 'C', mdays)
-        adf_add_file(adf, blocks, bitmap, dir, 'C/LoadWB', mdays, PROT_PARWED)
-        adf_add_file(adf, blocks, bitmap, dir, 'C/EndCLI', mdays, PROT_PARWED)
-        adf_mkdir(adf, blocks, bitmap, root, 'Devs', mdays)
-        adf_mkdir(adf, blocks, bitmap, root, 'Fonts', mdays)
-        adf_mkdir(adf, blocks, bitmap, root, 'L', mdays)
-        adf_mkdir(adf, blocks, bitmap, root, 'Libs', mdays)
-        dir = adf_mkdir(adf, blocks, bitmap, root, 'Prefs', mdays)
-        adf_mkdir(adf, blocks, bitmap, dir, 'Env-Archive', mdays)
-        dir = adf_mkdir(adf, blocks, bitmap, root, 'S', mdays)
-        adf_add_file(adf, blocks, bitmap, dir, 'S/Startup-Sequence', mdays,
-            PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
-            PROT_GRP_WRITE | PROT_GRP_READ |
-            PROT_OTR_WRITE | PROT_OTR_READ)
-        
-        for key, block in blocks.items():
-            adf_write(adf, key, block)
-    finally:
-        adf.close()
+class HelloAmi:
+    _DRAWER, _ASMBIN, _ASMEXE, _SCRIPT = range(4)
+    _FILE = 'HelloAmi.adf'
+    _LIST = (
+        (_ASMBIN, 'Disk.info'),
+        (_ASMEXE, 'HelloAmi'),
+        (_ASMBIN, 'HelloAmi.info'),
+        (_DRAWER, 'C', (
+            (_ASMEXE, 'C/LoadWB'),
+            (_ASMEXE, 'C/EndCLI'),)),
+        (_DRAWER, 'Devs', ()),
+        (_DRAWER, 'Fonts', ()),
+        (_DRAWER, 'Prefs', (
+            (_DRAWER, 'Env-Archive', ()),)),
+        (_DRAWER, 'S', (
+            (_SCRIPT, 'S/Startup-Sequence'),)),
+    )
+    _vasmm68k_mot = os.path.join('vasm', 'vasmm68k_mot')
+    @classmethod
+    def _add(cls, adf, dir, item, mdays):
+        t, n = item[:2]
+        if cls._DRAWER == t:
+            d = adf.mkdir(dir, n, mdays)
+            for i in item[2]:
+                cls._add(adf, d, i, mdays)
+        elif cls._ASMBIN == t:
+            cls._compile(n, t)
+            adf.add_file(dir, n, mdays)
+        elif cls._ASMEXE == t:
+            cls._compile(n, t)
+            adf.add_file(dir, n, mdays, (
+                PROT_ARCHIVE | PROT_PURE |
+                PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
+                PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ))
+        elif cls._SCRIPT == t:
+            adf.add_file(dir, n, mdays, (
+                PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
+                PROT_GRP_WRITE | PROT_GRP_READ |
+                PROT_OTR_WRITE | PROT_OTR_READ))
+    @classmethod
+    def _compile(cls, n, t):
+        p = n.replace('/', os.sep)
+        if not os.path.isfile(p):
+            if not os.path.isfile(cls._vasmm68k_mot):
+                for v in glob.glob(cls._vasmm68k_mot + '*'):
+                    if os.access(v, os.X_OK):
+                        cls._vasmm68k_mot = v
+                        break
+            subprocess.check_call([cls._vasmm68k_mot, '-quiet',
+                '-Fbin' if cls._ASMBIN == t else '-Fhunkexe',
+                '-o', p,
+                p + '.asm'])
+    @classmethod
+    def _rm(cls, item):
+        t, n = item[:2]
+        if cls._DRAWER == t:
+            for i in item[2]:
+                cls._rm(i)
+        elif t in (cls._ASMBIN, cls._ASMEXE):
+            p = n.replace('/', os.sep)
+            if os.path.isfile(p):
+                os.remove(p)
+    @classmethod
+    def build(cls):
+        cls._compile(cls._FILE, cls._ASMBIN)
+        adf = OFSDisk(cls._FILE)
+        dir, mdays = adf.root, DateStamp.gmtime()
+        dir.days = dir.disk_mod = dir.create_days = mdays
+        for item in cls._LIST:
+            cls._add(adf, dir, item, mdays)
+        adf.save()
+    @classmethod
+    def clean(cls):
+        if os.path.isfile(cls._FILE):
+            os.remove(cls._FILE)
+        for i in cls._LIST:
+            cls._rm(i)
 
-if __name__ == "__main__":
+def main(argv):
+    if (len(argv) > 1) and (argv[1] in ('clean', 'rebuild')):
+        HelloAmi.clean()
+    if (len(argv) <= 1) or (argv[1] in ('build', 'rebuild')):
+        HelloAmi.build()
+
+if __name__ == '__main__':
     main(sys.argv)
