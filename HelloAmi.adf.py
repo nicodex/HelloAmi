@@ -682,7 +682,7 @@ class HelloAmi:
                         cls._vasmm68k_mot = v
                         break
             subprocess.check_call([cls._vasmm68k_mot, '-quiet',
-                '-Fbin' if cls._ASMBIN == t else '-Fhunkexe',
+                '-Fbin' if cls._ASMBIN == t else '-Fhunkexe -pic -nosym',
                 '-o', p,
                 p + '.asm'])
     @classmethod
