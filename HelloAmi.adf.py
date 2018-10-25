@@ -647,7 +647,7 @@ class HelloAmi:
         (_DRAWER, 'Fonts', ()),
         (_DRAWER, 'L', ()),
         (_DRAWER, 'Libs', (
-            (_OPTBIN, 'icon.library'),)),
+            (_OPTBIN, 'Libs/icon.library'),)),
         (_DRAWER, 'Prefs', (
             (_DRAWER, 'Env-Archive', ()),)),
         (_DRAWER, 'S', (
