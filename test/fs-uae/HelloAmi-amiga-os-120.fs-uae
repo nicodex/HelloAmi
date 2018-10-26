@@ -3,6 +3,10 @@
 [fs-uae]
 accuracy = -1
 amiga_model = A1000
-floppy_drive_0 = ../../HelloAmi.adf
+developer = Nico Bendlin <nico@nicode.net>
+floppy_drive_0 = $CONFIG/../../HelloAmi.adf
 floppy_drive_speed = 0
+homepage_url = https://github.com/nicodex/HelloAmi
 kickstart_file = amiga-os-120.rom
+sub_title = Amiga 1.2
+title= HelloAmi
