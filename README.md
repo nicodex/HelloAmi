@@ -82,7 +82,7 @@ The binaries and the disk image have been tested with the following ROMs
 | `amiga-os-310-a4000.rom`  |     +     |    +     |    +     |    +     |
 | `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    **    |
 | `amiga-os-320-walker.rom` |     +     |    +     |    +     |    +     |
-| `aros-20170328[-ext].rom` |     +     |    +     |    +     |    +     |
+| `aros-20170328[-ext].rom` |     +     |    +     |    -     |    +     |
 
   - `*` requires `Libs/icon.library` on disk (not included in ROM)
   - `**` requires `Libs/workbench.library` on disk (not included in ROM)
