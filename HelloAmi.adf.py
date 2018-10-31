@@ -540,18 +540,14 @@ class OFSDisk:
             sub_type=ST_USERDIR)
         block.name.set_string(name)
         name_hash = block.name.__hash__()
-        prev_key = dir.hash_table[name_hash]
-        if not prev_key:
-            dir.hash_table[name_hash] = block.key
-        else:
-            while True:
-                prev = self._get_block(prev_key)
-                if prev.name.__eq__(block.name):
-                    raise Exception('%s already exists' % self._get_path(block))
-                prev_key = prev.hash_chain
-                if not prev_key:
-                    prev.hash_chain = block.key
-                    break
+        hash_next = dir.hash_table[name_hash]
+        dir.hash_table[name_hash] = block.key
+        block.hash_chain = hash_next
+        while hash_next:
+            next = self._get_block(hash_next)
+            if next.name.__eq__(block.name):
+                raise Exception('%s already exists' % self._get_path(block))
+            hash_next = next.hash_chain
         self._blocks[block.key] = block
         return block
     
@@ -587,18 +583,14 @@ class OFSDisk:
             sub_type=ST_FILE)
         head.name.set_string(file_name)
         name_hash = head.name.__hash__()
-        prev_key = dir.hash_table[name_hash]
-        if not prev_key:
-            dir.hash_table[name_hash] = head.key
-        else:
-            while True:
-                prev = self._get_block(prev_key)
-                if prev.name.__eq__(head.name):
-                    raise Exception('%s already exists' % self._get_path(head))
-                prev_key = prev.hash_chain
-                if not prev_key:
-                    prev.hash_chain = head.key
-                    break
+        hash_next = dir.hash_table[name_hash]
+        dir.hash_table[name_hash] = head.key
+        head.hash_chain = hash_next
+        while hash_next:
+            next = self._get_block(hash_next)
+            if next.name.__eq__(head.name):
+                raise Exception('%s already exists' % self._get_path(head))
+            hash_next = next.hash_chain
         self._blocks[head.key] = head
         f = open(file_path, 'rb')
         try:
