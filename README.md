@@ -83,9 +83,11 @@ The binaries and the disk image have been tested with the following ROMs
 | `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    **    |
 | `amiga-os-320-walker.rom` |     +     |    +     |    +     |    +     |
 | `aros-20170328[-ext].rom` |     +     |    +     |    -     |    +     |
+| `internal` ***            |     +     |    +     |    -     |    +     |
 
   - `*` requires `Libs/icon.library` on disk (not included in ROM)
   - `**` requires `Libs/workbench.library` on disk (not included in ROM)
+  - `***` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 For an unknown reason the boot block doesn't work with the 0.7 (beta) ROM.
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
