@@ -86,7 +86,9 @@ The binaries and the disk image have been tested with the following ROMs
 | `internal` ***            |     +     |    +     |    -     |    +     |
 
   - `*` requires `Libs/icon.library` on disk (not included in ROM)
-  - `**` requires `Libs/workbench.library` on disk (not included in ROM)
+  - `**` requires `Libs/workbench.library` on disk (not included in ROM)  
+    Can be downloaded for free from the
+    [Cloanto Web Workbench](https://www.amigaforever.com/classic/)
   - `***` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 For an unknown reason the boot block doesn't work with the 0.7 (beta) ROM.
