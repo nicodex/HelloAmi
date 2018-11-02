@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import with_statement
+
 import calendar
 import datetime
 import decimal
@@ -187,6 +189,7 @@ assert BitmapBlock.size == TD_SECTOR
 
 T_SHORT = 2  # RootBlock, UserDirectoryBlock, FileHeaderBlock
 T_DATA  = 8  # FileDataBlock
+T_LIST = 16  # FileHeaderBlock (extension)
 
 class BlockHeader(cstruct.CStruct):
     __byte_order__ = cstruct.BIG_ENDIAN
@@ -567,15 +570,11 @@ class OFSDisk:
                 PROT_OTR_WRITE | PROT_OTR_READ)
         block_full, block_part = divmod(file_size, OFSFILEDATA_SIZE)
         block_count = block_full + bool(block_part)
-        slot_count = min(TD_HTSIZE, block_count)
-        if block_count > slot_count:
-            raise Exception('file extension blocks are not implemented')
         head = FileHeaderBlock(
             header=BlockHeader(
                 block_type=T_SHORT,
                 own_key=self._bitmap.use_next(),
-                seq_num=block_count,
-                data_size=slot_count),
+                seq_num=min(TD_HTSIZE, block_count)),
             protect=prot,
             byte_size=file_size,
             days=mdays,
@@ -592,32 +591,42 @@ class OFSDisk:
                 raise Exception('%s already exists' % self._get_path(head))
             hash_next = next.hash_chain
         self._blocks[head.key] = head
-        f = open(file_path, 'rb')
-        try:
-            prev = head
-            snum = 1
-            left = file_size
-            while left > 0:
-                size = min(OFSFILEDATA_SIZE, left)
+        with open(file_path, 'rb') as f:
+            head_curr = head
+            data_prev = head
+            block_num = 0
+            size_left = file_size
+            while size_left > 0:
+                size = min(OFSFILEDATA_SIZE, size_left)
+                slot = block_num % TD_HTSIZE
+                if (block_num > 0) and (0 == slot):
+                    head_next = FileHeaderBlock(
+                        header=BlockHeader(
+                            block_type=T_LIST,
+                            own_key=self._bitmap.use_next(),
+                            seq_num=min(TD_HTSIZE, block_count - block_num)),
+                        parent=head.key,
+                        sub_type=ST_FILE)
+                    self._blocks[head_next.key] = head_next
+                    head_curr.extension = head_next.key
+                    head_curr = head_next
+                data_key = self._bitmap.use_next()
                 data = FileDataBlock(
                     header=BlockHeader(
                         block_type=T_DATA,
-                        own_key=self._bitmap.use_next(),
-                        seq_num=snum,
+                        own_key=head.key,
+                        seq_num=block_num + 1,
                         data_size=size)
                     )
-                fdata = struct.unpack('%dB' % data.header.data_size,
-                    f.read(data.header.data_size))
-                for b in range(len(fdata)):
-                    data.file_data[b] = fdata[b]
-                head.hash_table[TD_HTSIZE - snum] = data.key
-                self._blocks[data.key] = data
-                prev.header.next_block = data.key
-                prev = data
-                snum += 1
-                left -= size
-        finally:
-            f.close()
+                file_data = struct.unpack('%dB' % size, f.read(size))
+                for i in range(len(file_data)):
+                    data.file_data[i] = file_data[i]
+                head_curr.hash_table[TD_HTSIZE - slot - 1] = data_key
+                self._blocks[data_key] = data
+                data_prev.header.next_block = data_key
+                data_prev = data
+                block_num += 1
+                size_left -= size
         return head
     
     def save(self):
