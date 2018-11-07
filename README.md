@@ -13,7 +13,7 @@ This project contains some simple classic Amiga (1.0-3.1) examples:
     on the console (requests a new console window if run from WB).
   - `HelloAmi.adf.asm`  
     OFS disk image with a custom boot sector, that creates a task that
-    uses the `intuition.library` to show window with a "Hello, World!"
+    uses the `intuition.library` to show a window with a "Hello, World!"
     button (very early in the boot process, even before DOS is ready).
   - `C/LoadWB.asm`  
     Very simple re-implementation of the original program with the same name
@@ -48,12 +48,12 @@ because all used offsets and constants are hard-coded in the source.
 
 To compile all sources and build the disk image, just
 run the following command in the project directory:  
-`./HelloAmi.adf.py rebuild`
+`python HelloAmi.adf.py rebuild`
 
 If you want to use another assembler compiler/linker:  
-  - `./HelloAmi.adf.py clean`
+  - `python HelloAmi.adf.py clean`
   - compile/link all *.asm
-  - `./HelloAmi.adf.py build`
+  - `python HelloAmi.adf.py build`
 
 
 Tests
@@ -89,11 +89,12 @@ The binaries and the disk image have been tested with the following ROMs
   - `**` requires `Libs/workbench.library` on disk (not included in ROM)  
     Can be downloaded for free from the
     [Cloanto Web Workbench](https://www.amigaforever.com/classic/)
+    (but note that 45.127 does not work with the tested AROS versions)
   - `***` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 For an unknown reason the boot block doesn't work with the 0.7 (beta) ROM.
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
-`./test/fs-uae/` (you have to import the Amiga Forever ROMs first).
+`test/fs-uae/` (you might have to import the Amiga Forever ROMs first).
 The Amiga Forever `3.X` ROMs have not been tested, because the
 `workbench.library` is missing (like in the `amiga-os-310-a4000t.rom`).
 
