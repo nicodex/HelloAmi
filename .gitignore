@@ -5,6 +5,7 @@ HelloAmi.adf
 HelloAmi.info
 C/LoadWB
 C/EndCLI
+Libs/version.library
 
 # dependencies
 cstruct
@@ -18,4 +19,6 @@ vasm
 *.idc
 *.rp9
 *.sh
-Libs
+Libs/icon*.library
+Libs/workbench*.library
+

@@ -318,22 +318,28 @@ class RootBlock(cstruct.CStruct):
 assert RootBlock.size == TD_SECTOR
 
 
-PROT_DELETE      = (1 <<  0)              # NOT deletable
-PROT_EXECUTE     = (1 <<  1)              # NOT executable
-PROT_WRITE       = (1 <<  2)              # NOT writable
-PROT_READ        = (1 <<  3)              # NOT readable
-PROT_ARCHIVE     = (1 <<  4)              # archived
-PROT_PURE        = (1 <<  5)              # pure
-PROT_SCRIPT      = (1 <<  6)              # script
-PROT_HOLD        = (1 <<  7) | PROT_PURE  # hold (on first load)
-PROT_GRP_DELETE  = (1 <<  8)              # group: NOT deletable
-PROT_GRP_EXECUTE = (1 <<  9)              # group: executable
-PROT_GRP_WRITE   = (1 << 10)              # group: writable
-PROT_GRP_READ    = (1 << 11)              # group: readable
-PROT_OTR_DELETE  = (1 << 12)              # other: NOT deletable
-PROT_OTR_EXECUTE = (1 << 13)              # other: executable
-PROT_OTR_WRITE   = (1 << 14)              # other: writable
-PROT_OTR_READ    = (1 << 15)              # other: readable
+PROT_DELETE      = (1 <<  0)  # NOT deletable
+PROT_EXECUTE     = (1 <<  1)  # NOT executable
+PROT_WRITE       = (1 <<  2)  # NOT writable
+PROT_READ        = (1 <<  3)  # NOT readable
+PROT_ARCHIVE     = (1 <<  4)  # archived
+PROT_PURE        = (1 <<  5)  # pure
+PROT_SCRIPT      = (1 <<  6)  # script
+PROT_HOLD        = (1 <<  7)  # hold (pure executable)
+PROT_GRP_DELETE  = (1 <<  8)  # group: NOT deletable
+PROT_GRP_EXECUTE = (1 <<  9)  # group: executable
+PROT_GRP_WRITE   = (1 << 10)  # group: writable
+PROT_GRP_READ    = (1 << 11)  # group: readable
+PROT_OTR_DELETE  = (1 << 12)  # other: NOT deletable
+PROT_OTR_EXECUTE = (1 << 13)  # other: executable
+PROT_OTR_WRITE   = (1 << 14)  # other: writable
+PROT_OTR_READ    = (1 << 15)  # other: readable
+PROT_ARWD = PROT_EXECUTE | PROT_ARCHIVE | (
+    PROT_GRP_DELETE | PROT_GRP_WRITE | PROT_GRP_READ |
+    PROT_OTR_DELETE | PROT_OTR_WRITE | PROT_OTR_READ)
+PROT_ARWED = (PROT_ARWD - PROT_EXECUTE) | PROT_GRP_EXECUTE | PROT_OTR_EXECUTE
+PROT_PARWED = PROT_ARWED | PROT_PURE
+PROT_SARWED = PROT_ARWED | PROT_SCRIPT
 
 
 ST_USERDIR = 2
@@ -525,19 +531,18 @@ class OFSDisk:
     def root(self):
         return self._root
     
-    def mkdir(self, dir, name, mdays=None):
+    def mkdir(self, dir, name, mdays=None, prot=None):
         if dir is None:
             dir = self._root
         if mdays is None:
             mdays = DateStamp.gmtime()
+        if prot is None:
+            prot = PROT_ARWED
         block = UserDirectoryBlock(
             header=BlockHeader(
                 block_type=T_SHORT,
                 own_key=self._bitmap.use_next()),
-            protect=(
-                PROT_ARCHIVE |
-                PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
-                PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ),
+            protect=prot,
             days=mdays,
             parent=dir.key,
             sub_type=ST_USERDIR)
@@ -563,11 +568,7 @@ class OFSDisk:
         if mdays is None:
             mdays = DateStamp.gmtime(os.path.getmtime(file_path))
         if prot is None:
-            prot = (
-                PROT_EXECUTE |
-                PROT_ARCHIVE |
-                PROT_GRP_WRITE | PROT_GRP_READ |
-                PROT_OTR_WRITE | PROT_OTR_READ)
+            prot = PROT_ARWD
         block_full, block_part = divmod(file_size, OFSFILEDATA_SIZE)
         block_count = block_full + bool(block_part)
         head = FileHeaderBlock(
@@ -635,52 +636,40 @@ class OFSDisk:
 
 
 class HelloAmi:
-    _DRAWER, _ASMBIN, _ASMEXE, _OPTBIN, _SCRIPT = range(5)
+    _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
     _FILE = 'HelloAmi.adf'
     _LIST = (
-        (_ASMBIN, 'Disk.info'),
-        (_ASMEXE, 'HelloAmi'),
-        (_ASMBIN, 'HelloAmi.info'),
+        (_ASMBIN, 'Disk.info', PROT_ARWED),
+        (_ASMEXE, 'HelloAmi', PROT_PARWED),
+        (_ASMBIN, 'HelloAmi.info', PROT_ARWED),
         (_DRAWER, 'C', (
-            (_ASMEXE, 'C/LoadWB'),
-            (_ASMEXE, 'C/EndCLI'),)),
+            (_ASMEXE, 'C/LoadWB', PROT_PARWED),
+            (_ASMEXE, 'C/EndCLI', PROT_PARWED),)),
         (_DRAWER, 'Devs', ()),
         (_DRAWER, 'Fonts', ()),
         (_DRAWER, 'L', ()),
         (_DRAWER, 'Libs', (
-            (_OPTBIN, 'Libs/icon.library'),
-            (_OPTBIN, 'Libs/workbench.library'),)),
+            (_OPTBIN, 'Libs/icon.library', PROT_ARWED),
+            (_ASMLIB, 'Libs/version.library', PROT_PARWED),
+            (_OPTBIN, 'Libs/workbench.library', PROT_ARWED),)),
         (_DRAWER, 'Prefs', (
             (_DRAWER, 'Env-Archive', ()),)),
         (_DRAWER, 'S', (
-            (_SCRIPT, 'S/Startup-Sequence'),)),
+            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWED),)),
     )
     _vasmm68k_mot = os.path.join('vasm', 'vasmm68k_mot')
     @classmethod
     def _add(cls, adf, dir, item, mdays):
-        t, n = item[:2]
+        t, n, x = item
         if cls._DRAWER == t:
             d = adf.mkdir(dir, n, mdays)
-            for i in item[2]:
+            for i in x:
                 cls._add(adf, d, i, mdays)
-        elif cls._ASMBIN == t:
-            cls._compile(n, t)
-            adf.add_file(dir, n, mdays)
-        elif cls._ASMEXE == t:
-            cls._compile(n, t)
-            adf.add_file(dir, n, mdays, (
-                PROT_ARCHIVE | PROT_PURE |
-                PROT_GRP_EXECUTE | PROT_GRP_WRITE | PROT_GRP_READ |
-                PROT_OTR_EXECUTE | PROT_OTR_WRITE | PROT_OTR_READ))
-        elif cls._OPTBIN == t:
-            p = n.replace('/', os.sep)
-            if os.path.isfile(p):
-                adf.add_file(dir, n, mdays)
-        elif cls._SCRIPT == t:
-            adf.add_file(dir, n, mdays, (
-                PROT_EXECUTE | PROT_ARCHIVE | PROT_SCRIPT |
-                PROT_GRP_WRITE | PROT_GRP_READ |
-                PROT_OTR_WRITE | PROT_OTR_READ))
+        else:
+            if t in (cls._ASMBIN, cls._ASMEXE, cls._ASMLIB):
+                cls._compile(n, t)
+            if os.path.isfile(n.replace('/', os.sep)):
+                adf.add_file(dir, n, mdays, x)
     @classmethod
     def _compile(cls, n, t):
         p = n.replace('/', os.sep)
@@ -694,27 +683,29 @@ class HelloAmi:
             if cls._ASMBIN == t:
                 args.append('-Fbin')
             else:
-                args.extend(('-Fhunkexe', '-pic', '-nosym'))
+                args.extend(('-Fhunkexe', '-nosym'))
+                args.append('-pic' if cls._ASMEXE == t else '-kick1hunks')
             args.extend(('-o', p, p + '.asm'))
             subprocess.check_call(args)
     @classmethod
     def _rm(cls, item):
-        t, n = item[:2]
+        t, n, x = item
         if cls._DRAWER == t:
-            for i in item[2]:
+            for i in x:
                 cls._rm(i)
-        elif t in (cls._ASMBIN, cls._ASMEXE):
+        elif t in (cls._ASMBIN, cls._ASMEXE, cls._ASMLIB):
             p = n.replace('/', os.sep)
             if os.path.isfile(p):
                 os.remove(p)
     @classmethod
-    def build(cls):
+    def build(cls, mdays=None):
+        if mdays is None:
+            mdays = DateStamp.gmtime()
         cls._compile(cls._FILE, cls._ASMBIN)
         adf = OFSDisk(cls._FILE)
-        dir, mdays = adf.root, DateStamp.gmtime()
-        dir.days = dir.disk_mod = dir.create_days = mdays
+        adf.root.days = adf.root.disk_mod = adf.root.create_days = mdays
         for item in cls._LIST:
-            cls._add(adf, dir, item, mdays)
+            cls._add(adf, adf.root, item, mdays)
         adf.save()
     @classmethod
     def clean(cls):

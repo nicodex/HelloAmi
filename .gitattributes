@@ -3,5 +3,6 @@
 *.asm text eol=lf
 *.fs-uae text eol=lf
 *.info binary
+*.library binary
 *.py text eol=lf
 S/Startup-Sequence text eol=lf
