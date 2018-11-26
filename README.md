@@ -7,7 +7,7 @@ Just another "Hello, World!" for AmigaDOS in assembler.
 About
 -----
 
-This project contains some simple classic Amiga (1.0-3.1) examples:  
+This project contains some basic classic Amiga (1.0-3.1) examples:  
   - `HelloAmi.asm`  
     Combined CLI and Workbench program, that prints "Hello, World!"
     on the console (requests a new console window if run from WB).
@@ -24,6 +24,13 @@ This project contains some simple classic Amiga (1.0-3.1) examples:
     Re-implementation of the original program with the same name that closes
     the current CLI. This allows you to close the initial CLI after booting
     with a 1.x ROM (starting with 2.x ROMs `EndCLI` is an internal command).
+  - `Libs/version.library`  
+    Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
+    tool and the Workbench/About requester (Special/Version in 1.x Workbench)
+    to determine the version of the Workbench. Instead of a fixed major and
+    revision number, this library dynamically sets its own version number at
+    runtime (based on the currently loaded `workbench.library`, or the
+    resident `workbench.task` module, or the Kickstart version).
 
 
 Build
