@@ -115,7 +115,8 @@ VersionLibrary:
 .LibExtFunc:
 		moveq	#0,d0
 		rts
-.LibFree	move.l	$0026(a6),-(sp) ; vl_SegList
+.LibFree:
+		move.l	$0026(a6),-(sp) ; vl_SegList
 		move.l	a6,-(sp)
 		movea.l	(sp),a1
 		movea.l	$0022(a6),a6    ; vl_SysBase
