@@ -7,78 +7,92 @@
 VersionLibrary:
 		moveq	#-1,d0
 		rts
-.ResTag:
+.resTag:
 		dc.w	$4AFC           ; RT_MATCHWORD = RTC_MATCHWORD
-		dc.l	.ResTag         ; RT_MATCHTAG
-		dc.l	.ResEnd         ; RT_ENDSKIP
+		dc.l	.resTag         ; RT_MATCHTAG
+		dc.l	.resEnd         ; RT_ENDSKIP
 		dc.b	$80             ; RT_FLAGS = RTF_AUTOINIT
 		dc.b	0               ; RT_VERSION
 		dc.b	9               ; RT_TYPE = NT_LIBRARY
 		dc.b	0               ; RT_PRI
-		dc.l	.ResName        ; RT_NAME
-		dc.l	.ResVers        ; RT_IDSTRING
-		dc.l	.ResAuto        ; RT_INIT
-.ResName:
+		dc.l	.resName        ; RT_NAME
+		dc.l	.resIdString    ; RT_IDSTRING
+		dc.l	.resAuto        ; RT_INIT
+.resName:
 		dc.b	"version.library",0
 		dc.b	"$VER: "
-.ResVers:
-		dc.b	"wbver 0.0 (9.9.99)",13,10;0
-.ResAuto:
+.resIdString:
+		dc.b	"wbver 0.0 (9.9.99) [HelloAmi]",13,10,0
+.wbtName:
+		dc.b	"workbench.task",0
+.wblName:
+		dc.b	"workbench.library";0
+	align	1
+.resAuto:
 		dc.l	$002A           ; VersionLib_SIZEOF
-		dc.l	.LibVect
-		dc.l	.LibHead
+		dc.l	.libFunc
+		dc.l	.libData
 		dc.l	.LibInit
-.LibVect:
+.libFunc:
 		dc.w	-1
-		dc.w	.LibOpen-.LibVect
-		dc.w	.LibClose-.LibVect
-		dc.w	.LibExpunge-.LibVect
-		dc.w	.LibExtFunc-.LibVect
+		dc.w	.LibOpen-.libFunc
+		dc.w	.LibClose-.libFunc
+		dc.w	.LibExpunge-.libFunc
+		dc.w	.LibExtFunc-.libFunc
 		dc.w	-1
-.LibHead:
-		dc.b	%10100110,$08   ; LN_TYPE
+.libData:
+		dc.b	%10100110,$08   ; LN_TYPE/LN_PRI/LN_NAME/LIB_FLAGS
 		dc.b	9               ; NT_LIBRARY
 		dc.b	0
-		dc.l	.ResName
-		dc.b	$06             ; LIBF_SUMUSED!LIBF_CHANGED
-		dc.b	0
+		dc.l	.resName
+		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
+	align	1
 		dc.b	%10000000,$18   ; LIB_IDSTRING
-		dc.l	.ResVers
+		dc.l	.resIdString
 		dc.b	%00000000
-		dc.b	0
+	align	1
+;
+; REG(D0) struct Library *library
+; LibInit(
+; 	REG(D0) struct Library *libBase,
+; 	REG(A0) BPTR            segList),
+; REG(A6) struct ExecBase *sysBase
+;
 .LibInit:
-		movem.l	a6/a2/d2/d0,-(sp)
+		movem.l	d0/d2/a2/a6,-(sp)
 		movea.l	d0,a2
 		move.l	a6,$0022(a2)    ; vl_SysBase
 		move.l	a0,$0026(a2)    ; vl_SegList
+		; Kickstart version
 		lea	$0014+4(a2),a2  ; LIB_VERSION
-		move.w	$0022(a6),-(a2) ; SoftVer
+		move.w	$0022(a6),-(a2) ; SoftVer (0 in 1.x ROMs)
 		move.w	$0014(a6),-(a2) ; LIB_VERSION
-		lea	.WTName(pc),a1
+		; WB task (1.x), revision from IdString (after first dot)
+		lea	.wbtName(pc),a1
 		jsr	-$0060(a6)      ; _LVOFindResident
 		tst.l	d0
-		beq.s	.nowb
+		beq.b	.nowb
 		movea.l	d0,a0
 		moveq	#0,d0
 		moveq	#10,d2
 		move.l	$0012(a0),d1    ; RT_IDSTRING
-		beq.s	.tver
+		beq.b	.tver
 		movea.l	d1,a1
 .fdot:
 		move.b	(a1)+,d1
-		beq.s	.tver
+		beq.b	.tver
 		cmpi.b	#$002E,d1       ; '.'
-		bne.s	.fdot
+		bne.b	.fdot
 .trev:
 		moveq	#0,d1
 		move.b	(a1)+,d1
 		subi.w	#$0030,d1       ; '0'
-		bmi.s	.tver
+		bmi.b	.tver
 		cmp.w	d2,d1
-		bhs.s	.tver
+		bhs.b	.tver
 		mulu.w	d2,d0
 		add.w	d1,d0
-		bra.s	.trev
+		bra.b	.trev
 .tver:
 		move.b	$000B(a0),d2    ; RT_VERSION
 		swap	d2
@@ -88,31 +102,53 @@ VersionLibrary:
 .nowb:
 		movem.l	(sp)+,d0/d2/a2/a6
 		rts
+;
+; REG(D0) struct Library *library
+; LibOpen(VOID),
+; REG(A6) struct Library *libBase
+;
 .LibOpen:
 		move.l	a6,d0
-		movem.l	a6/a2/d2/d0,-(sp)
+		movem.l	d0/d2/a2/a6,-(sp)
 		addq.w	#1,$0020(a6)    ; LIB_OPENCNT
 		bclr	#3,$000E(a6)    ; LIBB_DELEXP,LIB_FLAGS
+		; update version with currently loaded WB library (2.x)
 		lea	$0014(a6),a2    ; LIB_VERSION
 		movea.l	$0022(a6),a6    ; vl_SysBase
 		lea	$017A(a6),a0    ; LibList
-		lea	.WLName(pc),a1
+		lea	.wblName(pc),a1
 		jsr	-$0114(a6)      ; _LVOFindName
 		tst.l	d0
-		beq.s	.nowb
+		beq.b	.nowb
 		movea.l	d0,a0
 		move.l	$0014(a0),d2    ; LIB_VERSION
-		bra.s	.setv
+		bra.b	.setv
+;
+; REG(D0) BPTR segList
+; LibClose(VOID),
+; REG(A6) struct Library *libBase
+;
 .LibClose:
 		subq.w	#1,$0020(a6)    ; LIB_OPENCNT
-		bne.s	.LibExtFunc
+		bne.b	.LibNull
 		btst	#3,$000E(a6)    ; LIBB_DELEXP,LIB_FLAGS
-		beq.s	.LibExtFunc
+		beq.b	.LibNull
+;
+; REG(D0) BPTR segList
+; LibExpunge(VOID),
+; REG(A6) struct Library *libBase
+;
 .LibExpunge:
 		tst.w	$0020(a6)       ; LIB_OPENCNT
-		beq.s	.LibFree
+		beq.b	.LibFree
 		bset	#3,$000E(a6)    ; LIBB_DELEXP,LIB_FLAGS
+;
+; REG(D0) APTR null
+; LibExtFunc(VOID),
+; REG(A6) struct Library *libBase
+;
 .LibExtFunc:
+.LibNull:
 		moveq	#0,d0
 		rts
 .LibFree:
@@ -132,9 +168,5 @@ VersionLibrary:
 		movea.l	(sp)+,a6
 		move.l	(sp)+,d0
 		rts
-.WTName:
-		dc.b	"workbench.task",0
-.WLName:
-		dc.b	"workbench.library",0
 	align	2
-.ResEnd:
+.resEnd:
