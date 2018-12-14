@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloAmi.adf.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$2ACF8EAD               ; BB_CHKSUM (HelloAmi.adf.py)
+		dc.l	$0B289B0D               ; BB_CHKSUM (HelloAmi.adf.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -11,14 +11,22 @@ sector0_1:
 ; 	entry point address in A0. The boot code is called after the
 ; 	strap module freed all resources (includes this two sectors)!
 ;
-		; MOVEM- order: A7/A6/A5/A4/A3/A2/A1/A0/D7/D6/D5/D4/D3/D2/D1/D0
-		movem.l	a3/a2/a0,-(sp)          ; thereafter: (SP) = A0
+; 	NOTE: The I/O request in A1 has to be preserved for 0.x ROMs.
+;
+		movem.l	a0-a3,-(sp)             ; thereafter: (SP) = A0
+		lea	$0014(a6),a2            ; LIB_VERSION
+		lea	-$0060(a6),a3           ; _LVOFindResident
+		;
+		; test SysBase version to avoid a deadlock with 0.x
+		;
+		moveq	#37,d0
+		cmp.w	(a2),d0
+		bge.b	.findDos
 		;
 		; this is part of the standard OS 2.x/3.x BootBlock
 		; (SILENTSTART is disabled by default for floppies)
 		;
 		lea	.expName,a1
-		moveq	#37,d0
 		jsr	-$0228(a6)              ; _LVOOpenLibrary
 		tst.l	d0
 		beq.b	.findDos
@@ -31,11 +39,12 @@ sector0_1:
 		; (return the dos.library init function)
 		;
 		lea	.dosName(pc),a1
-		jsr	-$0060(a6)              ; _LVOFindResident
+		jsr	(a3)
 		tst.l	d0
 		beq.b	.bootErr
 		movea.l	d0,a0
 		move.l	$0016(a0),(sp)          ; RT_INIT
+		lea	intName(pc),a1
 		bne.b	.findInt
 .bootErr:
 		;
@@ -43,16 +52,20 @@ sector0_1:
 		;
 		moveq	#-1,d0
 .bootRet:
-		; MOVEM+ order: D0/D1/D2/D3/D4/D5/D6/D7/A0/A1/A2/A3/A4/A5/A6/A7
-		movem.l	(sp)+,a0/a2/a3
+		movem.l	(sp)+,a0-a3
 		rts
 .findInt:
+		;
+		; FIXME: task is known to break 0.7 ROM boot process
+		;
+		moveq	#27,d0
+		sub.w	(a2),d0
+		beq.b	.bootRet
 		;
 		; the "Hello, World!" task needs the intuition.library
 		; (expected to be added during system and/or dos init)
 		; 
-		lea	intName(pc),a1
-		jsr	-$0060(a6)              ; _LVOFindResident
+		jsr	(a3)
 		tst.l	d0
 		beq.b	.bootRet
 		;
@@ -128,8 +141,7 @@ sector0_1:
 ;
 	align	2
 TaskCode:
-		; MOVEM- order: A7/A6/A5/A4/A3/A2/A1/A0/D7/D6/D5/D4/D3/D2/D1/D0
-		movem.l	a6/a5/a2/d4/d3/d2/d0,-(sp) ; D0 for stack space (lib)
+		movem.l	d0/d2-d4/a2/a5-a6,-(sp) ; D0 for stack space (lib)
 		movea.l	(4).w,a5                ; AbsExecBase
 		movea.l	a5,a6
 		;
@@ -222,8 +234,7 @@ TaskCode:
 		movea.l	a6,a1
 		movea.l	a5,a6
 		jsr	-$019E(a6)              ; _LVOCloseLibrary
-		; MOVEM+ order: D0/D1/D2/D3/D4/D5/D6/D7/A0/A1/A2/A3/A4/A5/A6/A7
-		movem.l	(sp)+,d2/d3/d4/a2/a5/a6
+		movem.l	(sp)+,d2-d4/a2/a5-a6
 		rts
 intName:
 		dc.b	"intuition.library",0

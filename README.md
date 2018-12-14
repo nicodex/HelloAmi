@@ -71,7 +71,7 @@ The binaries and the disk image have been tested with the following ROMs
 
 | ROM                       | BootBlock | HelloAmi | C/EndCLI | C/LoadWB |
 |:--------------------------|:---------:|:--------:|:--------:|:--------:|
-| `amiga-os-070.rom`        |     -     |          |          |          |
+| `amiga-os-070.rom`        |     -     |    +     |    +     |    -     |
 | `amiga-os-100.rom`        |     +     |    +     |    +     |    *     |
 | `amiga-os-110-ntsc.rom`   |     +     |    +     |    +     |    *     |
 | `amiga-os-110-pal.rom`    |     +     |    +     |    +     |    *     |
@@ -99,7 +99,6 @@ The binaries and the disk image have been tested with the following ROMs
     (but note that 45.127 does not work with the tested AROS versions)
   - `***` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
-For an unknown reason the boot block doesn't work with the 0.7 (beta) ROM.
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
 `test/fs-uae/` (you might have to import the Amiga Forever ROMs first).
 The Amiga Forever `3.X` ROMs have not been tested, because the
