@@ -8,5 +8,7 @@ floppy_drive_0 = $CONFIG/../../HelloAmi.adf
 floppy_drive_speed = 0
 homepage_url = https://github.com/nicodex/HelloAmi
 kickstart_file = amiga-os-204-a3000.rom
+save_states = 0
+save_states_dir = $CONFIG/
 sub_title = Amiga 2.04 (A3000)
 title= HelloAmi

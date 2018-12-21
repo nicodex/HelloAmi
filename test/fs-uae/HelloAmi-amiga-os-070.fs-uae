@@ -9,5 +9,7 @@ floppy_drive_speed = 0
 homepage_url = https://github.com/nicodex/HelloAmi
 kickstart_file = amiga-os-070.rom
 ntsc_mode = 1
+save_states = 0
+save_states_dir = $CONFIG/
 sub_title = Amiga 0.7 (NTSC, Beta)
 title= HelloAmi

@@ -9,5 +9,7 @@ floppy_drive_speed = 0
 homepage_url = https://github.com/nicodex/HelloAmi
 kickstart_file = aros-20170328.rom
 kickstart_ext_file = aros-20170328-ext.rom
+save_states = 0
+save_states_dir = $CONFIG/
 sub_title = AROS 20170328
 title= HelloAmi
