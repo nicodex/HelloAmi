@@ -1,15 +1,26 @@
 ; vasmm68k_mot[_<HOST>] -Fhunkexe -kick1hunks -nosym -o icon.library icon.library.asm
 ;
-; 	Implementation of a V1.x libs/icon.library replacement to allow
-; 	loading the Workbench of V1.x ROMs (required, but not included).
+;   NAME
+;	libs/icon.library
 ;
-; NOTES
-; 	This implementation is not intended to be used with V2+ ROMs
-; 	(internal structs il, NewDD, and WBObject have been changed).
+;   SYNOPSIS
+;	Implementation of a V1.x libs/icon.library replacement to allow
+;	creating the Workbench task from V1.x ROMs without the need for
+;	the original Workbench disk (which you otherwise must own/buy).
 ;
-; TODO
-; 	Icon writing is not yet implemented
-; 	and reading is incomplete (strings).
+;	The main target of this project is to keep the library as small
+;	as possible. Therefore, the code is not optimized for speed but
+;	size (which makes it sometimes less readable and maintainable).
+;
+;    NOTES
+;	This implementation is not intended to be used with V2+ ROMs
+;	(internal struct il, NewDD, and WBObject have been changed).
+;	However, due to the low version number and the fact that the
+;	library is present in V2+ ROMs, it isn't loaded by V2+ ROMs.
+;
+;    TODO
+;	Icon writing is not yet implemented
+;	and reading is incomplete (strings).
 ;
 IconLibrary:
 		moveq	#-1,d0
