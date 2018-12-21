@@ -22,9 +22,8 @@ and getting used to AmigaDOS. But in the meantime, the
 project has grown to allow starting the ROM Workbench:  
   - [`C/LoadWB`](C/LoadWB.asm)  
     Very simple re-implementation of the original program with the same name
-    that starts the Workbench (does not support any arguments, always returns
-    RETURN_OK, only supports the `workbench.task` method, and still has some
-    issues - like possible inheritance of the current console handles).
+    that starts the Workbench (ignores all arguments, always returns OK, does
+    not detect running Workbench, and only supports `workbench.task` method).
   - [`C/EndCLI`](C/EndCLI.asm)  
     Re-implementation of the original program with the same name that closes
     the current CLI. This allows you to close the initial CLI after booting
