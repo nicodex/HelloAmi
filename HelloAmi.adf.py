@@ -548,13 +548,14 @@ class OFSDisk:
             sub_type=ST_USERDIR)
         block.name.set_string(name)
         name_hash = block.name.__hash__()
-        #print('name hash $%08X "%s"' % (name_hash, name))
         hash_next = dir.hash_table[name_hash]
         dir.hash_table[name_hash] = block.key
         block.hash_chain = hash_next
         while hash_next:
             next = self._get_block(hash_next)
-            #print('NEXT hash $%08X "%s"' % (name_hash, next.name.get_string()))
+            #print('hash $%08X "%s" -> "%s"' % (name_hash, name, next.name.get_string()))
+            if next.name.__hash__() != name_hash:
+                raise Exception('buggy hash chain!')
             if next.name.__eq__(block.name):
                 raise Exception('%s already exists' % self._get_path(block))
             hash_next = next.hash_chain
@@ -585,13 +586,14 @@ class OFSDisk:
             sub_type=ST_FILE)
         head.name.set_string(file_name)
         name_hash = head.name.__hash__()
-        #print('name hash $%08X "%s"' % (name_hash, file_name))
         hash_next = dir.hash_table[name_hash]
         dir.hash_table[name_hash] = head.key
         head.hash_chain = hash_next
         while hash_next:
             next = self._get_block(hash_next)
-            #print('NEXT hash $%08X "%s"' % (name_hash, next.name.get_string()))
+            #print('hash $%08X "%s" -> "%s"' % (name_hash, file_name, next.name.get_string()))
+            if next.name.__hash__() != name_hash:
+                raise Exception('buggy hash chain!')
             if next.name.__eq__(head.name):
                 raise Exception('%s already exists' % self._get_path(head))
             hash_next = next.hash_chain
@@ -643,19 +645,19 @@ class HelloAmi:
     _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
     _FILE = 'HelloAmi.adf'
     _LIST = (
-        (_ASMBIN, 'Disk.info', PROT_ARWED),
-        (_ASMEXE, 'HelloAmi', PROT_PARWED),
-        (_ASMBIN, 'HelloAmi.info', PROT_ARWED),
         (_DRAWER, 'C', (
-            (_ASMEXE, 'C/LoadWB', PROT_PARWED),
-            (_ASMEXE, 'C/EndCLI', PROT_PARWED),)),
+            (_ASMEXE, 'C/EndCLI', PROT_PARWED),
+            (_ASMEXE, 'C/LoadWB', PROT_PARWED),)),
         (_DRAWER, 'Devs', ()),
+        (_ASMBIN, 'Disk.info', PROT_ARWD),
         (_DRAWER, 'Fonts', ()),
+        (_ASMEXE, 'HelloAmi', PROT_PARWED),
+        (_ASMBIN, 'HelloAmi.info', PROT_ARWD),
         (_DRAWER, 'L', ()),
         (_DRAWER, 'Libs', (
-            (_ASMLIB, 'Libs/icon.library', PROT_PARWED),
+            (_ASMLIB, 'Libs/icon.library', PROT_ARWED),
             (_OPTBIN, 'Libs/info.library', PROT_ARWED),
-            (_ASMLIB, 'Libs/version.library', PROT_PARWED),
+            (_ASMLIB, 'Libs/version.library', PROT_ARWED),
             (_OPTBIN, 'Libs/workbench.library', PROT_ARWED),)),
         (_DRAWER, 'Prefs', (
             (_DRAWER, 'Env-Archive', ()),)),
