@@ -8,23 +8,30 @@ About
 -----
 
 This project contains some basic classic Amiga (1.0-3.1) examples:  
-  - `HelloAmi.asm`  
-    Combined CLI and Workbench program, that prints "Hello, World!"
-    on the console (requests a new console window if run from WB).
-  - `HelloAmi.adf.asm`  
-    OFS disk image with a custom boot sector, that creates a task that
+  - [`HelloAmi`](HelloAmi.asm)  
+    Combined CLI/Workbench tool that uses the `dos.library`
+    to write "Hello, World!" to the current console output
+    (requests a new console window if run from Workbench).
+  - [`HelloAmi.adf`](HelloAmi.adf.asm)  
+    OFS disk image with a custom boot sector that creates a task that
     uses the `intuition.library` to show a window with a "Hello, World!"
     button (very early in the boot process, even before DOS is ready).
-  - `C/LoadWB.asm`  
+
+It all started with the goal of learning m68k assembler
+and getting used to AmigaDOS. But in the meantime, the
+project has grown to allow starting the ROM Workbench:  
+  - [`C/LoadWB`](C/LoadWB.asm)  
     Very simple re-implementation of the original program with the same name
     that starts the Workbench (does not support any arguments, always returns
     RETURN_OK, only supports the `workbench.task` method, and still has some
     issues - like possible inheritance of the current console handles).
-  - `C/EndCLI.asm`  
+  - [`C/EndCLI`](C/EndCLI.asm)  
     Re-implementation of the original program with the same name that closes
     the current CLI. This allows you to close the initial CLI after booting
     with a 1.x ROM (starting with 2.x ROMs `EndCLI` is an internal command).
-  - `Libs/version.library.asm`  
+  - [`Libs/icon.library`](Libs/icon.library.asm)  
+    Work in progress (allows creating the Workbench task from V1.x ROMs)
+  - [`Libs/version.library`](Libs/version.library.asm)  
     Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
     tool and the Workbench/About requester (Special/Version in 1.x Workbench)
     to determine the version of the Workbench. Instead of a fixed major and
@@ -72,12 +79,12 @@ The binaries and the disk image have been tested with the following ROMs
 | ROM                       | BootBlock | HelloAmi | C/EndCLI | C/LoadWB |
 |:--------------------------|:---------:|:--------:|:--------:|:--------:|
 | `amiga-os-070.rom`        |     -     |    +     |    +     |    -     |
-| `amiga-os-100.rom`        |     +     |    +     |    +     |    *     |
-| `amiga-os-110-ntsc.rom`   |     +     |    +     |    +     |    *     |
-| `amiga-os-110-pal.rom`    |     +     |    +     |    +     |    *     |
-| `amiga-os-120.rom`        |     +     |    +     |    +     |    *     |
-| `amiga-os-130.rom`        |     +     |    +     |    +     |    *     |
-| `amiga-os-130-a3000.rom`  |     +     |    +     |    +     |    *     |
+| `amiga-os-100.rom`        |     +     |    +     |    +     |    +     |
+| `amiga-os-110-ntsc.rom`   |     +     |    +     |    +     |    +     |
+| `amiga-os-110-pal.rom`    |     +     |    +     |    +     |    +     |
+| `amiga-os-120.rom`        |     +     |    +     |    +     |    +     |
+| `amiga-os-130.rom`        |     +     |    +     |    +     |    +     |
+| `amiga-os-130-a3000.rom`  |     +     |    +     |    +     |    +     |
 | `amiga-os-204.rom`        |     +     |    +     |    +     |    +     |
 | `amiga-os-204-a3000.rom`  |     +     |    +     |    +     |    +     |
 | `amiga-os-205-a600.rom`   |     +     |    +     |    +     |    +     |
@@ -87,17 +94,16 @@ The binaries and the disk image have been tested with the following ROMs
 | `amiga-os-310-a1200.rom`  |     +     |    +     |    +     |    +     |
 | `amiga-os-310-a3000.rom`  |     +     |    +     |    +     |    +     |
 | `amiga-os-310-a4000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    **    |
+| `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    *     |
 | `amiga-os-320-walker.rom` |     +     |    +     |    +     |    +     |
 | `aros-20170328[-ext].rom` |     +     |    +     |    -     |    +     |
-| `internal` ***            |     +     |    +     |    -     |    +     |
+| FS-UAE `internal` **      |     +     |    +     |    -     |    +     |
 
-  - `*` requires `Libs/icon.library` on disk (not included in ROM)
-  - `**` requires `Libs/workbench.library` on disk (not included in ROM)  
+  - `*` requires `Libs/workbench.library` on disk (not included in ROM)  
     Can be downloaded for free from the
     [Cloanto Web Workbench](https://www.amigaforever.com/classic/)
     (but note that 45.127 does not work with the tested AROS versions)
-  - `***` as of this writing AROS `Version SVN50730, built on 2015-05-20`
+  - `**` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
 `test/fs-uae/` (you might have to import the Amiga Forever ROMs first).
