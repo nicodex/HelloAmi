@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloAmi.adf.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$0B289B0D               ; BB_CHKSUM (HelloAmi.adf.py)
+		dc.l	$1A45A25E               ; BB_CHKSUM (HelloAmi.adf.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -13,14 +13,12 @@ sector0_1:
 ;
 ; 	NOTE: The I/O request in A1 has to be preserved for 0.x ROMs.
 ;
-		movem.l	a0-a3,-(sp)             ; thereafter: (SP) = A0
-		lea	$0014(a6),a2            ; LIB_VERSION
-		lea	-$0060(a6),a3           ; _LVOFindResident
+		movem.l	d0-d1/a1-a3,-(sp)       ; (sp),entry/*
 		;
 		; test SysBase version to avoid a deadlock with 0.x
 		;
 		moveq	#37,d0
-		cmp.w	(a2),d0
+		cmp.w	$0014(a6),d0            ; LIB_VERSION
 		bge.b	.findDos
 		;
 		; this is part of the standard OS 2.x/3.x BootBlock
@@ -39,7 +37,7 @@ sector0_1:
 		; (return the dos.library init function)
 		;
 		lea	.dosName(pc),a1
-		jsr	(a3)
+		jsr	-$0060(a6)              ; _LVOFindResident
 		tst.l	d0
 		beq.b	.bootErr
 		movea.l	d0,a0
@@ -52,20 +50,15 @@ sector0_1:
 		;
 		moveq	#-1,d0
 .bootRet:
-		movem.l	(sp)+,a0-a3
+		movea.l	(sp)+,a0
+		movem.l	(sp)+,d1/a1-a3
 		rts
 .findInt:
-		;
-		; FIXME: task is known to break 0.7 ROM boot process
-		;
-		moveq	#27,d0
-		sub.w	(a2),d0
-		beq.b	.bootRet
 		;
 		; the "Hello, World!" task needs the intuition.library
 		; (expected to be added during system and/or dos init)
 		; 
-		jsr	(a3)
+		jsr	-$0060(a6)              ; _LVOFindResident
 		tst.l	d0
 		beq.b	.bootRet
 		;
