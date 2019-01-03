@@ -624,23 +624,24 @@ IGetWBObject:
 		jsr	-$002A(a6)      ; _LVOGetIcon
 		tst.l	d0
 		beq.b	.free
-		lea	$0004-$0050(a4),a0     ; do_Gadget
-		lea	$0060(a3),a1           ; OldWBObject.wo_Gadget
-		moveq	#$002C/4-1,d0          ; gg_SIZEOF
+		lea	$0004-$0050(a4),a0      ; do_Gadget
+		lea	$0060(a3),a1            ; OldWBObject.wo_Gadget
+		moveq	#$002C/4-1,d0           ; gg_SIZEOF
 .loop:
 		move.l	(a0)+,(a1)+
 		dbf	d0,.loop
-		move.b	$0030-$0050(a4),$003D(a3)       ; do_Type,OldWBObject.wo_Type
-		move.l	$0032-$0050(a4),$0048(a3)       ; do_DefaultTool,OldWBObject.wo_DefaultTool
-		move.l	$003A-$0050(a4),$0054(a3)       ; do_CurrentX,OldWBObject.wo_CurrentX
-		move.l	$003E-$0050(a4),$0058(a3)       ; do_CurrentY,OldWBObject.wo_CurrentY
-		move.l	$0036-$0050(a4),$005C(a3)       ; do_ToolTypes,OldWBObject.wo_ToolTypes
-		move.l	$0046-$0050(a4),$009C(a3)       ; do_ToolWindow,OldWBObject.wo_ToolWindow
-		move.l	$004A-$0050(a4),$00A0(a3)       ; do_StackSize,OldWBObject.wo_StackSize
-		movea.l	$0042-$0050(a4),a0     ; do_DrawerData
-		move.l	a0,$004C(a3)           ; OldWBObject.wo_DrawerData
+		move.b	(a0)+,$003D(a3) ; OldWBObject.wo_Type
+		addq.l	#1,a0           ; (do_PAD_BYTE)
+		move.l	(a0)+,$0048(a3) ; OldWBObject.wo_DefaultTool
+		move.l	(a0)+,$005C(a3) ; OldWBObject.wo_ToolTypes
+		move.l	(a0)+,$0054(a3) ; OldWBObject.wo_CurrentX
+		move.l	(a0)+,$0058(a3) ; OldWBObject.wo_CurrentY
+		movea.l	(a0)+,a1        ; (do_DrawerData)
+		move.l	(a0)+,$009C(a3) ; OldWBObject.wo_ToolWindow
+		move.l	(a0),$00A0(a3)  ; OldWBObject.wo_StackSize
+		move.l	a1,$004C(a3)    ; OldWBObject.wo_DrawerData
 		beq.b	.done
-		move.l	a3,$01A8(a0)    ; OldNewDD.dd_Object
+		move.l	a3,$01A8(a1)    ; OldNewDD.dd_Object
 .done:
 		move.l	(sp)+,d0
 		unlk	a4
@@ -1122,7 +1123,7 @@ IPutWBObject:
 		move.l	(a2)+,(a3)+
 		dbf	d0,.loop
 		move.b	$003D(a1),(a3)+ ; OldWBObject.wo_Type
-		clr.b	(a3)+           ; (do_pad)
+		clr.b	(a3)+           ; (do_PAD_BYTE)
 		move.l	$0048(a1),(a3)+ ; OldWBObject.wo_DefaultTool
 		move.l	$005C(a1),(a3)+ ; OldWBObject.wo_ToolTypes
 		move.l	$0054(a1),(a3)+ ; OldWBObject.wo_CurrentX
