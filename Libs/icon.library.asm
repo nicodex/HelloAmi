@@ -40,7 +40,7 @@ IconLibrary:
 		dc.b	"icon.library",0
 		dc.b	"$VER: "
 .resIdString:
-		dc.b	"icon 34.3 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"icon 34.4 (9.9.99) [HelloAmi]",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -97,7 +97,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	34,3
+		dc.w	34,4
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -212,7 +212,7 @@ IconLibrary:
 ******************************************************************************
 IAllocWBObject:
 		move.l	d1,-(sp)
-		moveq	#$A8/2,d0       ; sizeof(OldWBObject)
+		moveq	#$A8/2,d0       ; sizeof OldWBObject
 		add.l	d0,d0
 		moveq	#$8C/2,d1       ; OldWBObject.wo_FreeList
 		add.l	d1,d1
@@ -332,7 +332,7 @@ IAllocMem:
 ******************************************************************************
 IGetDiskObject:
 		movem.l	d0-d1/a0-a2,-(sp)
-		moveq	#$5E,d0         ; do_SIZEOF+FreeList_SIZEOF
+		moveq	#$4E+$10,d0     ; do_SIZEOF+FreeList_SIZEOF
 		moveq	#$4E,d1         ; do_SIZEOF
 		bsr.b	IAllocObject
 		move.l	d0,(sp)         ; (sp),object/*
@@ -417,7 +417,7 @@ IReplenishFreeList:
 		move.w	(a0),d0         ; (fl_NumFree)
 		ext.l	d0
 		bgt.b	.done
-		moveq	#$60,d0         ; ML_SIZE+(ME_SIZE*10)
+		moveq	#10*$08+$10,d0  ; 10*ME_SIZE+ML_SIZE
 		bsr.b	IAllocMemPublicClear
 		movea.l	(sp),a0         ; (sp),free/*
 		tst.l	d0
@@ -682,6 +682,9 @@ IGetWBObject:
 *	Differences to the original behaviour:
 *	- only Image (no Border) gadgets are supported (WB2/WB3)
 *
+*	As of release V2.0 this function allocates a NewDD structure
+*	instead of a OldNewDD structure for the do_DrawerData field.
+*
 ******************************************************************************
 IGetIcon:
 		movem.l	d1-d5/a0-a5,-(sp)
@@ -700,7 +703,6 @@ IGetIcon:
 		bne.b	.vers
 		cmpi.w	#$0001,(a3)+    ; WB_DISKVERSION,do_Version
 		bne.b	.vers
-		clr.l	(a3)            ; (gg_NextGadget)
 		btst.b	#2,$000C+1(a3)  ; log2(GFLG_GADGIMAGE),gg_Flags
 		bne.b	.dodd
 .vers:
@@ -715,11 +717,11 @@ IGetIcon:
 		tst.l	(a5)
 		beq.b	.ggim
 		moveq	#$38,d3         ; OldDrawerData_SIZEOF
-		movea.w	#$01BE,a1       ; sizeof(OldNewDD)
+		movea.w	#$01BE,a1       ; sizeof OldNewDD (NewDD $01D8)
 		movea.l	#$00010001,a2   ; MEMF_PUBLIC!MEMF_CLEAR (WB1 chip)
 		bsr.w	IReadFreePart
 		beq.b	.fail
-		lea	$01AC(a5),a5    ; OldNewDD.dd_Children
+		lea	$01AC(a5),a5    ; OldNewDD.dd_Children (NewDD $01B2)
 		move.l	a5,$0008(a5)    ; LH_TAILPRED
 		addq.l	#4,a5	        ; LH_TAIL
 		move.l	a5,-(a5)
@@ -731,11 +733,15 @@ IGetIcon:
 		addq.l	#4,a5           ; gg_SelectRender-gg_GadgetRender
 		bsr.b	IReadImage
 		beq.b	.fail
+		; skip gadget text
 		clr.l	$001A(a3)       ; gg_GadgetText
 .TODO:		; read icon strings
 		clr.l	$0032-$0004(a3) ; do_DefaultTool-do_Gadget
 		clr.l	$0036-$0004(a3) ; do_ToolTypes-do_Gadget
 		clr.l	$0046-$0004(a3) ; do_ToolWindow-do_Gadget
+		; final cleanup
+		clr.l	(a3)            ; (gg_NextGadget)
+		clr.l	$0028(a3)       ; gg_UserData
 		bra.b	.done
 .fail:
 		moveq	#0,d5           ; FALSE
@@ -769,7 +775,7 @@ ISetIoErr:
 		rts
 
 ;
-; REG(D0) CCR(Z) LONG error
+; REG(D0) LONG error
 ; IIoErr(VOID),
 ; REG(A6) struct il *iconBase
 ;
@@ -778,7 +784,7 @@ IIoErr:
 		bra.b	IDosCall
 
 ;
-; REG(D0) CCR(Z) BOOL success
+; REG(D0) BOOL success
 ; IClose(VOID),
 ; REG(D4) BPTR       file,
 ; REG(A6) struct il *iconBase
