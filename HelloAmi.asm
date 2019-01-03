@@ -1,6 +1,6 @@
 ; vasmm68k_mot[_<HOST>] -Fhunkexe -pic -nosym -o HelloAmi HelloAmi.asm
 HelloAmi:
-		movem.l	d2/d3/d4/d5/a2/a6,-(sp)
+		movem.l	d2-d5/a2/a6,-(sp)
 		moveq	#122,d3         ; ERROR_INVALID_RESIDENT_LIBRARY
 		moveq	#0,d4           ; WBStartup message
 		moveq	#0,d5           ; new console handle
@@ -60,7 +60,7 @@ HelloAmi:
 		move.l	$0094(a2),d3    ; pr_Result2
 .closeCon:
 		;
-		; wait 1.5 s and close a newly opened CON window
+		; wait 2.5 s and close a newly opened CON window
 		;
 		tst.l	d5
 		beq.b	.closeDos
@@ -93,7 +93,7 @@ HelloAmi:
 		beq.b	.return
 		moveq	#20,d0          ; RETURN_FAIL
 .return:
-		movem.l	(sp)+,a6/a2/d5/d4/d3/d2
+		movem.l	(sp)+,d2-d5/a2/a6
 		rts
 .conSpec:
 		; continued with .dosName as title to save bytes
