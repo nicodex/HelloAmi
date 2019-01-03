@@ -1114,23 +1114,23 @@ IPutIcon:
 IPutWBObject:
 		movem.l	d1/a0-a3,-(sp)
 		link.w	a4,#-$0050      ; (do_SIZEOF+3)&~3
-		movea.l	a1,a2
-		move.l	#$E3100001,-$0050(a4)   ; WB_DISKMAGIC/WB_DISKVERSION
-		lea	$0060(a2),a1            ; OldWBObject.wo_Gadget
-		lea	$0004-$0050(a4),a3      ; do_Gadget
+		movea.l	sp,a3
+		move.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
+		lea	$0060(a1),a2            ; OldWBObject.wo_Gadget
 		moveq	#$002C/4-1,d0           ; gg_SIZEOF
 .loop:
-		move.l	(a1)+,(a3)+
+		move.l	(a2)+,(a3)+
 		dbf	d0,.loop
-		move.b	$003D(a2),$0030-$0050(a4)       ; OldWBObject.wo_Type,do_Type
-		move.l	$0048(a2),$0032-$0050(a4)       ; OldWBObject.wo_DefaultTool,do_DefaultTool
-		move.l	$0054(a2),$003A-$0050(a4)       ; OldWBObject.wo_CurrentX,do_CurrentX
-		move.l	$0058(a2),$003E-$0050(a4)       ; OldWBObject.wo_CurrentY,do_CurrentY
-		move.l	$005C(a2),$0036-$0050(a4)       ; OldWBObject.wo_ToolTypes,do_ToolTypes
-		move.l	$004C(a2),$0042-$0050(a4)       ; OldWBObject.wo_DrawerData,do_DrawerData
-		move.l	$009C(a2),$0046-$0050(a4)       ; OldWBObject.wo_ToolWindow,do_ToolWindow
-		move.l	$00A0(a2),$004A-$0050(a4)       ; OldWBObject.wo_StackSize,do_StackSize
-		lea	-$0050(a4),a1
+		move.b	$003D(a1),(a3)+ ; OldWBObject.wo_Type
+		clr.b	(a3)+           ; (do_pad)
+		move.l	$0048(a1),(a3)+ ; OldWBObject.wo_DefaultTool
+		move.l	$005C(a1),(a3)+ ; OldWBObject.wo_ToolTypes
+		move.l	$0054(a1),(a3)+ ; OldWBObject.wo_CurrentX
+		move.l	$0058(a1),(a3)+ ; OldWBObject.wo_CurrentY
+		move.l	$004C(a1),(a3)+ ; OldWBObject.wo_DrawerData
+		move.l	$009C(a1),(a3)+ ; OldWBObject.wo_ToolWindow
+		move.l	$00A0(a1),(a3)  ; OldWBObject.wo_StackSize
+		movea.l	sp,a1
 		jsr	-$0030(a6)      ; _LVOPutIcon
 		unlk	a4
 		movem.l	(sp)+,d1/a0-a3
