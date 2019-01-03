@@ -694,15 +694,13 @@ IGetIcon:
 		move.l	#1005,d2        ; MODE_OLDFILE
 		bsr.w	IOpen
 		move.l	d0,d4
-		beq.w	.nope
+		beq.b	.nope
 		; read disk object
 		move.l	a3,d2
 		moveq	#$4E,d3         ; do_SIZEOF
 		bsr.w	IRead
 		bne.b	.vers
-		cmpi.w	#$E310,(a3)+    ; WB_DISKMAGIC,do_Magic
-		bne.b	.vers
-		cmpi.w	#$0001,(a3)+    ; WB_DISKVERSION,do_Version
+		cmpi.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
 		bne.b	.vers
 		btst.b	#2,$000C+1(a3)  ; log2(GFLG_GADGIMAGE),gg_Flags
 		bne.b	.dodd
@@ -736,8 +734,11 @@ IGetIcon:
 		beq.b	.fail
 		; skip gadget text
 		clr.l	$001A(a3)       ; gg_GadgetText
+		; read default tool
+		lea	$0032-$0004(a3),a5      ; do_DefaultTool-do_Gadget
+		bsr.b	IReadString
+		beq.b	.fail
 .TODO:		; read icon strings
-		clr.l	$0032-$0004(a3) ; do_DefaultTool-do_Gadget
 		clr.l	$0036-$0004(a3) ; do_ToolTypes-do_Gadget
 		clr.l	$0046-$0004(a3) ; do_ToolWindow-do_Gadget
 		; final cleanup
@@ -747,11 +748,7 @@ IGetIcon:
 .fail:
 		moveq	#0,d5           ; FALSE
 .done:
-		bsr.b	IIoErr
-		move.l	d0,-(sp)
 		bsr.b	IClose
-		move.l	(sp)+,d0
-		bsr.b	ISetIoErr
 		move.l	d5,d0
 .nope:
 		movem.l	(sp)+,d1-d5/a0-a5
@@ -776,26 +773,6 @@ ISetIoErr:
 		rts
 
 ;
-; REG(D0) LONG error
-; IIoErr(VOID),
-; REG(A6) struct il *iconBase
-;
-IIoErr:
-		move.w	#-$0084,d0      ; _LVOIoErr
-		bra.b	IDosCall
-
-;
-; REG(D0) BOOL success
-; IClose(VOID),
-; REG(D4) BPTR       file,
-; REG(A6) struct il *iconBase
-;
-IClose:
-		move.l	d4,d1
-		move.w	#-$0024,d0      ; _LVOClose
-		bra.b	IDosCall
-
-;
 ; REG(D0) CCR(Z) BOOL status
 ; IReadImage(VOID),
 ; REG(D4) BPTR             file,
@@ -803,30 +780,84 @@ IClose:
 ; REG(A5) struct Image   **image,
 ; REG(A6) struct il       *iconBase
 ;
+; NOTES:
+; 	registers D3/A2 are NOT preserved
+;
 IReadImage:
 		move.l	a5,-(sp)
 		tst.l	(a5)
-		beq.b	.null
+		beq.b	IReadRefTrue
 		; read Image struct
 		moveq	#$14,d3         ; ig_SIZEOF
 		movea.w	#$0001,a2       ; MEMF_PUBLIC
-		bsr.b	IReadFree
-		beq.b	.done
+		bsr.w	IReadFree
+		beq.b	IReadRefDone
 		; read image planes
 		bsr.b	IProcessImage
-		ble.b	.fail
+		ble.b	IReadRefFail
 		movea.w	#$0003,a2       ; MEMF_PUBLIC!MEMF_CHIP
-		bsr.b	IReadFree
-		beq.b	.fail
-.null:
-		moveq	#1,d0
-.done:
+		bsr.w	IReadFree
+		beq.b	IReadRefFail
+IReadRefTrue:
+		moveq	#1,d0           ; TRUE
+IReadRefDone:
 		movea.l	(sp)+,a5
 		rts
-.fail:
+IReadRefFail:
+		moveq	#0,d0           ; FALSE/NULL
 		movea.l	(sp),a5
 		move.l	d0,(a5)
-		bra.b	.done
+		bra.b	IReadRefDone
+
+;
+; REG(D0) CCR(Z) BOOL status
+; IReadString(VOID),
+; REG(D4) BPTR             file,
+; REG(A4) struct FreeList *free,
+; REG(A5) STRPTR          *str,
+; REG(A6) struct il       *iconBase
+;
+; NOTES:
+; 	registers D2-D3/A2 are NOT preserved
+;
+IReadString:
+		move.l	a5,-(sp)
+		tst.l	(a5)
+		beq.b	IReadRefTrue
+		; read length
+		moveq	#4,d3
+		subq.l	#4,sp
+		move.l	sp,d2
+		bsr.b	IRead
+		movea.l	(sp)+,a5
+		bne.b	IReadRefFail
+		; test length
+		move.l	a5,d3
+		ble.b	IReadRefFail
+		; read string
+		movea.w	#$0001,a2       ; MEMF_PUBLIC
+		movea.l	(sp),a5
+		bsr.b	IReadFree
+		beq.b	IReadRefDone
+		; force EOS
+		clr.b	-1(a5,d3.l)
+		bra.b	IReadRefTrue
+
+;
+; VOID
+; IClose(VOID),
+; REG(D4) BPTR       file,
+; REG(A6) struct il *iconBase
+;
+IClose:
+		move.w	#-$0084,d0      ; _LVOIoErr
+		bra.b	IDosCall
+		move.l	d0,-(sp)
+		move.l	d4,d1
+		move.w	#-$0024,d0      ; _LVOClose
+		bra.b	IDosCall
+		move.l	(sp)+,d0
+		bra.w	ISetIoErr
 
 ;
 ; REG(D0) CCR(Z) BOOL failure
