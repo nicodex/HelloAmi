@@ -73,7 +73,7 @@ Tests
 -----
 
 The binaries and the disk image have been tested with the following ROMs
-(included in [Amiga Forever](https://www.amigaforever.com/) 7 Plus Edition):
+(included in [Amiga Forever](https://www.amigaforever.com/) 8 Plus Edition):
 
 | ROM                       | BootBlock | HelloAmi | C/EndCLI | C/LoadWB |
 |:--------------------------|:---------:|:--------:|:--------:|:--------:|
@@ -96,6 +96,7 @@ The binaries and the disk image have been tested with the following ROMs
 | `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    *     |
 | `amiga-os-320-walker.rom` |     +     |    +     |    +     |    +     |
 | `aros-20170328[-ext].rom` |     +     |    +     |    -     |    +     |
+| `aros-20181209[-ext].rom` |     +     |    +     |    -     |    +     |
 | FS-UAE `internal` **      |     +     |    +     |    -     |    +     |
 
   - `*` requires `Libs/workbench.library` on disk (not included in ROM)  
