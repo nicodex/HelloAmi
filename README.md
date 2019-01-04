@@ -25,11 +25,14 @@ project has grown to allow starting the ROM Workbench:
     that starts the Workbench (ignores all arguments, always returns OK, does
     not detect running Workbench, and only supports `workbench.task` method).
   - [`C/EndCLI`](C/EndCLI.asm)  
-    Re-implementation of the original program with the same name that closes
-    the current CLI. This allows you to close the initial CLI after booting
-    with a 1.x ROM (starting with 2.x ROMs `EndCLI` is an internal command).
+    Re-implementation of the original program that closes the current CLI.
+    This allows you to close the initial CLI after booting with a 1.x ROM
+    (starting with 2.x ROMs `EndCLI` is an internal command).
   - [`Libs/icon.library`](Libs/icon.library.asm)  
-    Work in progress (allows creating the Workbench task from V1.x ROMs)
+    Re-implementation of the original library to allow creating the Workbench
+    task from V1.x ROMs without the need for the original Workbench disk
+    (which you otherwise must own/buy).  
+    _Work in progress_: Icon writing is not yet implemented.
   - [`Libs/version.library`](Libs/version.library.asm)  
     Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
     tool and the Workbench/About requester (Special/Version in 1.x Workbench)
