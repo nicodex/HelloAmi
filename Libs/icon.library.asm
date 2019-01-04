@@ -19,8 +19,7 @@
 ;	library is present in V2+ ROMs, it isn't loaded by V2+ ROMs.
 ;
 ;    TODO
-;	Icon writing is not yet implemented
-;	and reading is incomplete (strings).
+;	Icon writing is not yet implemented.
 ;
 IconLibrary:
 		moveq	#-1,d0
@@ -40,7 +39,7 @@ IconLibrary:
 		dc.b	"icon.library",0
 		dc.b	"$VER: "
 .resIdString:
-		dc.b	"icon 34.4 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"icon 34.5 (9.9.99) [HelloAmi]",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -97,7 +96,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	34,4
+		dc.w	34,5
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -708,7 +707,14 @@ IGetIcon:
 		moveq	#212/2,d0       ; ERROR_OBJECT_WRONG_TYPE
 		add.l	d0,d0
 		bsr.b	ISetIoErr
-		bra.b	.fail
+.fail:
+		moveq	#0,d5           ; FALSE
+.done:
+		bsr.w	IClose
+		move.l	d5,d0
+.nope:
+		movem.l	(sp)+,d1-d5/a0-a5
+		rts
 .dodd:
 		moveq	#1,d5
 		; read drawer data
@@ -736,23 +742,20 @@ IGetIcon:
 		clr.l	$001A(a3)       ; gg_GadgetText
 		; read default tool
 		lea	$0032-$0004(a3),a5      ; do_DefaultTool-do_Gadget
+		bsr.w	IReadString
+		beq.b	.fail
+		; read tool types
+		addq.l	#4,a5           ; do_ToolTypes-do_DefaultTool
+		bsr.w	IReadStrings
+		beq.b	.fail
+		; read tool window
+		lea	$0046-$0004(a3),a5      ; do_ToolWindow-do_Gadget
 		bsr.b	IReadString
 		beq.b	.fail
-.TODO:		; read icon strings
-		clr.l	$0036-$0004(a3) ; do_ToolTypes-do_Gadget
-		clr.l	$0046-$0004(a3) ; do_ToolWindow-do_Gadget
 		; final cleanup
 		clr.l	(a3)            ; (gg_NextGadget)
 		clr.l	$0028(a3)       ; gg_UserData
 		bra.b	.done
-.fail:
-		moveq	#0,d5           ; FALSE
-.done:
-		bsr.b	IClose
-		move.l	d5,d0
-.nope:
-		movem.l	(sp)+,d1-d5/a0-a5
-		rts
 
 ;
 ; REG(D0) LONG oldCode
@@ -793,7 +796,7 @@ IReadImage:
 		bsr.w	IReadFree
 		beq.b	IReadRefDone
 		; read image planes
-		bsr.b	IProcessImage
+		bsr.w	IProcessImage
 		ble.b	IReadRefFail
 		movea.w	#$0003,a2       ; MEMF_PUBLIC!MEMF_CHIP
 		bsr.w	IReadFree
@@ -808,6 +811,26 @@ IReadRefFail:
 		movea.l	(sp),a5
 		move.l	d0,(a5)
 		bra.b	IReadRefDone
+
+;
+; REG(D3) CCR(N,Z) LONG value
+; IReadLong(VOID),
+; REG(D4) BPTR             file,
+; REG(A6) struct il       *iconBase
+;
+; NOTES:
+; 	registers D2-D3 are NOT preserved
+;
+IReadLong:
+		moveq	#4,d3
+		move.l	d3,-(sp)
+		move.l	sp,d2
+		bsr.b	IRead
+		beq.b	.done
+		clr.l	(sp)
+.done:
+		move.l	(sp)+,d3
+		rts
 
 ;
 ; REG(D0) CCR(Z) BOOL status
@@ -825,23 +848,62 @@ IReadString:
 		tst.l	(a5)
 		beq.b	IReadRefTrue
 		; read length
-		moveq	#4,d3
-		subq.l	#4,sp
-		move.l	sp,d2
-		bsr.b	IRead
-		movea.l	(sp)+,a5
-		bne.b	IReadRefFail
-		; test length
-		move.l	a5,d3
+		bsr.b	IReadLong
 		ble.b	IReadRefFail
 		; read string
 		movea.w	#$0001,a2       ; MEMF_PUBLIC
-		movea.l	(sp),a5
-		bsr.b	IReadFree
+		bsr.w	IReadFree
 		beq.b	IReadRefDone
-		; force EOS
+		; force EOS (custom extension)
 		clr.b	-1(a5,d3.l)
 		bra.b	IReadRefTrue
+
+;
+; REG(D0) CCR(Z) BOOL status
+; IReadStrings(VOID),
+; REG(D4) BPTR             file,
+; REG(A4) struct FreeList *free,
+; REG(A5) STRPTR          *strs,
+; REG(A6) struct il       *iconBase
+;
+; NOTES:
+; 	registers D2-D3/A2 are NOT preserved
+;
+IReadStrings:
+		move.l	a5,-(sp)
+		tst.l	(a5)
+		beq.b	IReadRefTrue
+		; read table size
+		bsr.b	IReadLong
+		; test table size (custom extension)
+		asr.l	#2,d3
+		asl.l	#2,d3
+		ble.b	IReadRefFail
+		; alloc table mem
+		movea.l	a4,a0
+		movea.l	d3,a1
+		movea.w	#$0001,a2       ; MEMF_PUBLIC
+		jsr	-$0072(a6)      ; _LVOFreeAlloc
+		move.l	d0,(a5)
+		beq.b	IReadRefFail
+		; fill table (BOOL*,NULL)
+		movea.l	d0,a5
+		bra.b	.null
+.bool:
+		move.l	d0,(a5)+
+.null:
+		subq.l	#4,d3
+		bne.b	.bool
+		clr.l	(a5)
+		; read strings
+		movea.l	d0,a5
+.read:
+		tst.l	(a5)
+		beq.b	IReadRefTrue
+		bsr.b	IReadString
+		beq.b	IReadRefFail
+		addq.l	#4,a5
+		bra.b	.read
 
 ;
 ; VOID
