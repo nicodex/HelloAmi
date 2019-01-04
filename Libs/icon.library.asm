@@ -57,9 +57,9 @@ IconLibrary:
 		dc.w	.LibExtFunc-.libFunc            ; -$0018
 		; private
 		dc.w	IGetWBObject-.libFunc           ; -$001E
-		dc.w	.LibExtFunc-.libFunc            ; -$0024 TODO: IPutWBObject
+		dc.w	IPutWBObject-.libFunc           ; -$0024
 		dc.w	IGetIcon-.libFunc               ; -$002A
-		dc.w	.LibExtFunc-.libFunc            ; -$0030 TODO: IPutIcon
+		dc.w	IPutIcon-.libFunc               ; -$0030
 		; public
 		dc.w	IFreeFreeList-.libFunc          ; -$0036
 		; private
@@ -68,7 +68,7 @@ IconLibrary:
 		; public
 		dc.w	IAddFreeList-.libFunc           ; -$0048
 		dc.w	IGetDiskObject-.libFunc         ; -$004E
-		dc.w	.LibExtFunc-.libFunc            ; -$0054 TODO: IPutDiskObject
+		dc.w	IPutDiskObject-.libFunc         ; -$0054
 		dc.w	IFreeDiskObject-.libFunc        ; -$005A
 		dc.w	IFindToolType-.libFunc          ; -$0060
 		dc.w	IMatchToolValue-.libFunc        ; -$0066
@@ -176,7 +176,6 @@ IconLibrary:
 		movea.w	#-$019E,a0      ; _LVOCloseLibrary
 		bsr.b	ISysCall
 .freeLib:
-		movea.l	a6,a0           ; as seen in some 1.10 code
 		movea.l	a6,a1
 		movea.w	#-$00FC,a0      ; _LVORemove
 		bsr.b	ISysCall
@@ -716,7 +715,7 @@ IGetIcon:
 		movem.l	(sp)+,d1-d5/a0-a5
 		rts
 .dodd:
-		moveq	#1,d5
+		moveq	#1,d5           ; TRUE
 		; read drawer data
 		lea	$0042-$0004(a3),a5      ; do_DrawerData-do_Gadget
 		tst.l	(a5)
@@ -863,7 +862,7 @@ IReadString:
 ; IReadStrings(VOID),
 ; REG(D4) BPTR             file,
 ; REG(A4) struct FreeList *free,
-; REG(A5) STRPTR          *strs,
+; REG(A5) STRPTR         **strs,
 ; REG(A6) struct il       *iconBase
 ;
 ; NOTES:
@@ -1090,9 +1089,9 @@ IIconDosCall:
 ; 	REG(D2) LONG   mask),
 ; REG(A6) struct il *iconBase
 ;
-;ISetProtection:
-;		move.w	#-$00BA,d0      ; _LVOSetProtection
-;		bra.b	IIconDosCall
+ISetProtection:
+		move.w	#-$00BA,d0      ; _LVOSetProtection
+		bra.b	IIconDosCall
 
 ;
 ; REG(D0) BOOL success
@@ -1100,9 +1099,9 @@ IIconDosCall:
 ; 	REG(A0) STRPTR name),
 ; REG(A6) struct il *iconBase
 ;
-;IDeleteFile:
-;		move.w	#-$0048,d0      ; _LVODeleteFile
-;		bra.b	IIconDosCall
+IDeleteFile:
+		move.w	#-$0048,d0      ; _LVODeleteFile
+		bra.b	IIconDosCall
 
 ;
 ; REG(D0) CCR(Z) BOOL failure
@@ -1112,11 +1111,11 @@ IIconDosCall:
 ; 	REG(D3) LONG length),
 ; REG(A6) struct il *iconBase
 ;
-;IWrite:
-;		move.w	#-$0030,d0      ; _LVOWrite
-;		bsr.b	IDosCall
-;		sub.l	d3,d0
-;		rts
+IWrite:
+		move.w	#-$0030,d0      ; _LVOWrite
+		bsr.b	IDosCall
+		sub.l	d3,d0
+		rts
 
 ******* icon.library/PutDiskObject *******************************************
 *
@@ -1148,7 +1147,7 @@ IIconDosCall:
 *	notifies the Workbench that an icon has been created/modified.
 *
 ******************************************************************************
-;TODO: IPutDiskObject:
+IPutDiskObject:
 
 ******i icon.library/PutIcon *************************************************
 *
@@ -1175,10 +1174,10 @@ IIconDosCall:
 *	status -- TRUE if the call succeeded else FALSE
 *
 ******************************************************************************
-;TODO: IPutIcon:
-;		;TODO: PutIcon
-;		moveq	#0,d0
-;		rts
+IPutIcon:
+		;TODO: PutIcon
+		moveq	#0,d0
+		rts
 
 ******i icon.library/PutWBObject *********************************************
 *
@@ -1205,30 +1204,30 @@ IIconDosCall:
 *	status -- TRUE if call succeeded, else FALSE
 *
 ******************************************************************************
-;TODO: IPutWBObject:
-;		movem.l	d1/a0-a3,-(sp)
-;		link.w	a4,#-$0050      ; (do_SIZEOF+3)&~3
-;		movea.l	sp,a3
-;		move.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
-;		lea	$0060(a1),a2            ; OldWBObject.wo_Gadget
-;		moveq	#$002C/4-1,d0           ; gg_SIZEOF
-;.loop:
-;		move.l	(a2)+,(a3)+
-;		dbf	d0,.loop
-;		move.b	$003D(a1),(a3)+ ; OldWBObject.wo_Type
-;		clr.b	(a3)+           ; (do_PAD_BYTE)
-;		move.l	$0048(a1),(a3)+ ; OldWBObject.wo_DefaultTool
-;		move.l	$005C(a1),(a3)+ ; OldWBObject.wo_ToolTypes
-;		move.l	$0054(a1),(a3)+ ; OldWBObject.wo_CurrentX
-;		move.l	$0058(a1),(a3)+ ; OldWBObject.wo_CurrentY
-;		move.l	$004C(a1),(a3)+ ; OldWBObject.wo_DrawerData
-;		move.l	$009C(a1),(a3)+ ; OldWBObject.wo_ToolWindow
-;		move.l	$00A0(a1),(a3)  ; OldWBObject.wo_StackSize
-;		movea.l	sp,a1
-;		jsr	-$0030(a6)      ; _LVOPutIcon
-;		unlk	a4
-;		movem.l	(sp)+,d1/a0-a3
-;		rts
+IPutWBObject:
+		movem.l	d1/a0-a3,-(sp)
+		link.w	a4,#-$0050      ; (do_SIZEOF+3)&~3
+		movea.l	sp,a3
+		move.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
+		lea	$0060(a1),a2            ; OldWBObject.wo_Gadget
+		moveq	#$002C/4-1,d0           ; gg_SIZEOF
+.loop:
+		move.l	(a2)+,(a3)+
+		dbf	d0,.loop
+		move.b	$003D(a1),(a3)+ ; OldWBObject.wo_Type
+		clr.b	(a3)+           ; (do_PAD_BYTE)
+		move.l	$0048(a1),(a3)+ ; OldWBObject.wo_DefaultTool
+		move.l	$005C(a1),(a3)+ ; OldWBObject.wo_ToolTypes
+		move.l	$0054(a1),(a3)+ ; OldWBObject.wo_CurrentX
+		move.l	$0058(a1),(a3)+ ; OldWBObject.wo_CurrentY
+		move.l	$004C(a1),(a3)+ ; OldWBObject.wo_DrawerData
+		move.l	$009C(a1),(a3)+ ; OldWBObject.wo_ToolWindow
+		move.l	$00A0(a1),(a3)  ; OldWBObject.wo_StackSize
+		movea.l	sp,a1
+		jsr	-$0030(a6)      ; _LVOPutIcon
+		unlk	a4
+		movem.l	(sp)+,d1/a0-a3
+		rts
 
 ;
 ; REG(D0) CCR(Z) ULONG len
