@@ -680,6 +680,7 @@ IGetWBObject:
 *   NOTES
 *	Differences to the original behaviour:
 *	- only Image (no Border) gadgets are supported (WB2/WB3)
+*	- gg_GadgetRender has to be present (unsupported by WB1)
 *
 *	As of release V2.0 this function allocates a NewDD structure
 *	instead of a OldNewDD structure for the do_DrawerData field.
@@ -697,15 +698,15 @@ IGetIcon:
 		move.l	a3,d2
 		moveq	#$4E,d3         ; do_SIZEOF
 		bsr.w	IRead
-		bne.b	.vers
+		bne.b	.eowt
 		cmpi.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
-		bne.b	.vers
+		bne.b	.eowt
 		btst.b	#2,$000C+1(a3)  ; log2(GFLG_GADGIMAGE),gg_Flags
+		beq.b	.eowt
+		tst.l	$0012(a3)       ; gg_GadgetRender
 		bne.b	.dodd
-.vers:
-		moveq	#212/2,d0       ; ERROR_OBJECT_WRONG_TYPE
-		add.l	d0,d0
-		bsr.b	ISetIoErr
+.eowt:
+		bsr.b	ISetIoErrObjectWrongType
 .fail:
 		moveq	#0,d5           ; FALSE
 .done:
@@ -758,6 +759,14 @@ IGetIcon:
 
 ;
 ; REG(D0) LONG oldCode
+; ISetIoErrObjectWrongType(VOID),
+; REG(A6) struct il *iconBase
+;
+ISetIoErrObjectWrongType:
+		moveq	#212/2,d0       ; ERROR_OBJECT_WRONG_TYPE
+		add.l	d0,d0
+;
+; REG(D0) LONG oldCode
 ; ISetIoErr(
 ; 	REG(D0) LONG code),
 ; REG(A6) struct il *iconBase
@@ -796,7 +805,7 @@ IReadImage:
 		beq.b	IReadRefDone
 		; read image planes
 		bsr.w	IProcessImage
-		ble.b	IReadRefFail
+		ble.b	IReadRefEowt
 		movea.w	#$0003,a2       ; MEMF_PUBLIC!MEMF_CHIP
 		bsr.w	IReadFree
 		beq.b	IReadRefFail
@@ -805,6 +814,8 @@ IReadRefTrue:
 IReadRefDone:
 		movea.l	(sp)+,a5
 		rts
+IReadRefEowt:
+		bsr.b	ISetIoErrObjectWrongType
 IReadRefFail:
 		moveq	#0,d0           ; FALSE/NULL
 		movea.l	(sp),a5
@@ -848,7 +859,7 @@ IReadString:
 		beq.b	IReadRefTrue
 		; read length
 		bsr.b	IReadLong
-		ble.b	IReadRefFail
+		ble.b	IReadRefEowt
 		; read string
 		movea.w	#$0001,a2       ; MEMF_PUBLIC
 		bsr.w	IReadFree
@@ -877,7 +888,7 @@ IReadStrings:
 		; test table size (custom extension)
 		asr.l	#2,d3
 		asl.l	#2,d3
-		ble.b	IReadRefFail
+		ble.b	IReadRefEowt
 		; alloc table mem
 		movea.l	a4,a0
 		movea.l	d3,a1
