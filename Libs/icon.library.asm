@@ -18,9 +18,6 @@
 ;	However, due to the low version number and the fact that the
 ;	library is present in V2+ ROMs, it isn't loaded by V2+ ROMs.
 ;
-;    TODO
-;	Icon writing is not yet implemented.
-;
 IconLibrary:
 		moveq	#-1,d0
 		rts
@@ -39,7 +36,7 @@ IconLibrary:
 		dc.b	"icon.library",0
 		dc.b	"$VER: "
 .resIdString:
-		dc.b	"icon 34.5 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"icon 34.6 (9.9.99) [HelloAmi]",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -96,7 +93,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	34,5
+		dc.w	34,6
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -210,9 +207,9 @@ IconLibrary:
 ******************************************************************************
 IAllocWBObject:
 		move.l	d1,-(sp)
-		moveq	#$A8/2,d0       ; sizeof OldWBObject
+		moveq	#$00A8/2,d0     ; sizeof OldWBObject
 		add.l	d0,d0
-		moveq	#$8C/2,d1       ; OldWBObject.wo_FreeList
+		moveq	#$008C/2,d1     ; OldWBObject.wo_FreeList
 		add.l	d1,d1
 		bsr.b	IAllocObject
 		move.l	(sp)+,d1
@@ -330,8 +327,8 @@ IAllocMem:
 ******************************************************************************
 IGetDiskObject:
 		movem.l	d0-d1/a0-a2,-(sp)
-		moveq	#$4E+$10,d0     ; do_SIZEOF+FreeList_SIZEOF
-		moveq	#$4E,d1         ; do_SIZEOF
+		moveq	#$004E+$0010,d0 ; do_SIZEOF+FreeList_SIZEOF
+		moveq	#$004E,d1       ; do_SIZEOF
 		bsr.b	IAllocObject
 		move.l	d0,(sp)         ; (sp),object/*
 		beq.b	.done
@@ -680,7 +677,7 @@ IGetWBObject:
 *   NOTES
 *	Differences to the original behaviour:
 *	- only Image (no Border) gadgets are supported (WB2/WB3)
-*	- gg_GadgetRender has to be present (unsupported by WB1)
+*	- gg_GadgetRender has to be present (NULL breaks 1.x WB)
 *
 *	As of release V2.0 this function allocates a NewDD structure
 *	instead of a OldNewDD structure for the do_DrawerData field.
@@ -696,7 +693,7 @@ IGetIcon:
 		beq.b	.nope
 		; read disk object
 		move.l	a3,d2
-		moveq	#$4E,d3         ; do_SIZEOF
+		moveq	#$004E,d3       ; do_SIZEOF
 		bsr.w	IRead
 		bne.b	.eowt
 		cmpi.l	#$E3100001,(a3)+        ; WB_DISKMAGIC/WB_DISKVERSION
@@ -721,7 +718,7 @@ IGetIcon:
 		lea	$0042-$0004(a3),a5      ; do_DrawerData-do_Gadget
 		tst.l	(a5)
 		beq.b	.ggim
-		moveq	#$38,d3         ; OldDrawerData_SIZEOF
+		moveq	#$0038,d3       ; OldDrawerData_SIZEOF
 		movea.w	#$01BE,a1       ; sizeof OldNewDD (NewDD $01D8)
 		movea.l	#$00010001,a2   ; MEMF_PUBLIC!MEMF_CLEAR (WB1 chip)
 		bsr.w	IReadFreePart
@@ -799,7 +796,7 @@ IReadImage:
 		tst.l	(a5)
 		beq.b	IReadRefTrue
 		; read Image struct
-		moveq	#$14,d3         ; ig_SIZEOF
+		moveq	#$0014,d3       ; ig_SIZEOF
 		movea.w	#$0001,a2       ; MEMF_PUBLIC
 		bsr.w	IReadFree
 		beq.b	IReadRefDone
@@ -926,10 +923,13 @@ IClose:
 		bra.b	IDosCall
 		move.l	d0,-(sp)
 		move.l	d4,d1
+		beq.b	.done
 		move.w	#-$0024,d0      ; _LVOClose
 		bra.b	IDosCall
+.done:
 		move.l	(sp)+,d0
 		bra.w	ISetIoErr
+	;	rts
 
 ;
 ; REG(D0) CCR(Z) BOOL failure
@@ -1094,38 +1094,106 @@ IIconDosCall:
 	align	1
 
 ;
-; REG(D0) BOOL success
-; ISetProtection(
-; 	REG(A0) STRPTR name
-; 	REG(D2) LONG   mask),
-; REG(A6) struct il *iconBase
+; REG(D0) CCR(Z) BOOL failure
+; IWriteLong(
+; 	REG(D0) LONG value),
+; REG(D4) BPTR             file,
+; REG(A6) struct il       *iconBase
 ;
-ISetProtection:
-		move.w	#-$00BA,d0      ; _LVOSetProtection
-		bra.b	IIconDosCall
-
+; NOTES:
+; 	registers D2-D3 are NOT preserved
 ;
-; REG(D0) BOOL success
-; IDeleteFile(
-; 	REG(A0) STRPTR name),
-; REG(A6) struct il *iconBase
-;
-IDeleteFile:
-		move.w	#-$0048,d0      ; _LVODeleteFile
-		bra.b	IIconDosCall
+IWriteLong:
+		move.l	d0,-(sp)
+		move.l	sp,d2
+		moveq	#4,d3
+		bsr.b	IWrite
+		addq.l	#4,sp
+		rts
 
 ;
 ; REG(D0) CCR(Z) BOOL failure
 ; IWrite(
-; 	REG(D1) BPTR file,
 ; 	REG(D2) APTR buffer,
 ; 	REG(D3) LONG length),
+; REG(D4) BPTR       file,
 ; REG(A6) struct il *iconBase
 ;
 IWrite:
+		move.l	d4,d1
 		move.w	#-$0030,d0      ; _LVOWrite
 		bsr.b	IDosCall
 		sub.l	d3,d0
+		rts
+
+;
+; REG(D0) CCR(Z) BOOL failure
+; IWriteString(VOID),
+; REG(D4) BPTR             file,
+; REG(A2) STRPTR           str,
+; REG(A6) struct il       *iconBase
+;
+; NOTES:
+; 	registers D2-D3 are NOT preserved
+;
+IWriteString:
+		move.l	a2,d0
+		move.l	d0,-(sp)
+		beq.b	.done
+		movea.l	d0,a1
+		bsr.w	IStrLen
+		addq.l	#1,d0
+		move.l	d0,(sp)
+		bsr.b	IWriteLong
+		bne.b	.done
+		move.l	a2,d2
+		move.l	(sp),d3
+		bsr.b	IWrite
+.done:
+		addq.l	#4,sp
+		rts
+
+;
+; REG(D0) CCR(Z) BOOL failure
+; IWriteImage(
+; 	REG(A2) struct Image *image),
+; REG(D4) BPTR          file,
+; REG(A6) struct il    *iconBase
+;
+; NOTES:
+; 	registers D2-D3/A2 are NOT preserved
+;
+IWriteImage:
+		
+		movem.l	a3/a5,-(sp)
+		link.w	a4,#-$0014      ; (ig_SIZEOF+3)&~3
+		move.l	a2,d0
+		beq.b	.done
+		; write Image struct
+		movea.l	sp,a5
+		moveq	#$0014/4-1,d0   ; ig_SIZEOF
+.loop:
+		move.l	(a2)+,(a5)+
+		dbf	d0,.loop
+		movea.l	sp,a5
+		bsr.w	IProcessImage
+		movea.l	d3,a3
+		ble.b	.eowt
+		move.l	sp,d2
+		moveq	#$0014,d3       ; ig_SIZEOF
+		bsr.b	IWrite
+		bne.b	.done
+		; write image planes
+		move.l	(a5),d2
+		move.l	a3,d3
+		bsr.b	IWrite
+		beq.b	.done
+.eowt:
+		bsr.w	ISetIoErrObjectWrongType
+		moveq	#-1,d0
+.done:
+		unlk	a4
+		movem.l	(sp)+,a3/a5
 		rts
 
 ******* icon.library/PutDiskObject *******************************************
@@ -1186,8 +1254,82 @@ IPutDiskObject:
 *
 ******************************************************************************
 IPutIcon:
-		;TODO: PutIcon
+		movem.l	d1-d6/a0-a4,-(sp)
+		moveq	#0,d4
+		movea.l	a1,a3
+		move.l	$0004+$0016(a3),d6      ; do_Gadget+gg_SelectRender
+		move.w	$0004+$000C(a3),d2      ; do_Gadget+gg_Flags
+		btst.l	#2,d2           ; log2(GFLG_GADGIMAGE)
+		beq.w	.eowt
+		moveq	#$0003,d1       ; GFLG_GADGHIGHBITS
+		and.l	d1,d2
+		subq.l	#$0001,d2       ; GFLG_GADGBACKFILL
+		bne.b	.open
+		move.l	d2,$0004+$0016(a3)      ; do_Gadget+gg_SelectRender
+.open:
+		move.l	#1006,d2        ; MODE_NEWFILE
+		bsr.w	IOpen
+		move.l	d0,d4
+		beq.b	.fail
+		; write disk object
+		move.l	a3,d2
+		moveq	#$004E,d3       ; do_SIZEOF
+		bsr.w	IWrite
+		bne.b	.fail
+		; write drawer data
+		move.l	$0042(a3),d2    ; do_DrawerData
+		beq.b	.ggim
+		moveq	#$0038,d3       ; OldDrawerData_SIZEOF
+		bsr.w	IWrite
+		bne.b	.fail
+.ggim:
+		; write gadget images
+		movea.l	$0004+$0012(a3),a2      ; do_Gadget+gg_GadgetRender
+		bsr.w	IWriteImage
+		bne.b	.fail
+		movea.l	$0004+$0016(a3),a2      ; do_Gadget+gg_SelectRender
+		bsr.w	IWriteImage
+		bne.b	.fail
+		; write default tool
+		movea.l	$0032(a3),a2    ; do_DefaultTool
+		bsr.w	IWriteString
+		bne.b	.fail
+		; write tool types
+		move.l	$0036(a3),d0    ; do_ToolTypes
+		beq.b	.dotw
+		movea.l	d0,a2
 		moveq	#0,d0
+.ttcn:
+		addq.l	#4,d0
+		tst.l	(a2)+
+		bne.b	.ttcn
+		bsr.w	IWriteLong
+		bne.b	.fail
+		movea.l	$0036(a3),a4    ; do_ToolTypes
+.ttws:
+		move.l	(a4)+,d0
+		beq.b	.dotw
+		movea.l	d0,a2
+		bsr.w	IWriteString
+		bne.b	.fail
+		bra.b	.ttws
+.dotw:
+		; write tool window
+		movea.l	$0046(a3),a2    ; do_ToolWindow
+		bsr.w	IWriteString
+		bne.b	.fail
+		moveq	#1,d5           ; TRUE
+		bra.b	.done
+.eowt:
+		bsr.w	ISetIoErrObjectWrongType
+.fail:
+		moveq	#0,d5           ; FALSE
+.done:
+		move.l	d6,$0004+$0016(a3)      ; do_Gadget+gg_SelectRender
+		bsr.w	IClose
+		;TODO: SetProtection/DeleteFile (WB2/WB3)
+		move.l	d5,d0
+		movem.l	(sp)+,d1-d6/a0-a4
 		rts
 
 ******i icon.library/PutWBObject *********************************************
