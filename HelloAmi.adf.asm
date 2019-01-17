@@ -24,7 +24,7 @@ sector0_1:
 		; this is part of the standard OS 2.x/3.x BootBlock
 		; (SILENTSTART is disabled by default for floppies)
 		;
-		lea	.expName,a1
+		lea	.expName(pc),a1
 		jsr	-$0228(a6)              ; _LVOOpenLibrary
 		tst.l	d0
 		beq.b	.findDos
