@@ -113,6 +113,12 @@ The Amiga Forever `3.X` ROMs have not been tested, because the
 `workbench.library` is missing (like in the `amiga-os-310-a4000t.rom`).
 
 
+Aside
+-----
+
+You might build and use the [`BBlock0x.bb`](BBlock0x.bb.asm)
+if an OFS floppy should be able to load DOS on 0.x beta ROMs.
+
 Legal
 -----
 
