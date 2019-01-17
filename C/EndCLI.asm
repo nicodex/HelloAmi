@@ -79,7 +79,7 @@ EndCLI:
 		;
 		jsr	-$0084(a6)      ; _LVOForbid
 		cmpi.w	#33,$0014(a1)   ; LIB_VERSION (requires DOS 1.2+)
-		blt.b	.segDone
+		blo.b	.segDone
 		movea.l	$0022(a1),a0    ; dl_Root
 		movea.l	$0018(a0),a0    ; rn_Info
 		adda.l	a0,a0

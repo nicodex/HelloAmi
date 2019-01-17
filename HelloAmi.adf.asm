@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloAmi.adf.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$1A45A25E               ; BB_CHKSUM (HelloAmi.adf.py)
+		dc.l	$1A45B45E               ; BB_CHKSUM (HelloAmi.adf.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -19,7 +19,7 @@ sector0_1:
 		;
 		moveq	#37,d0
 		cmp.w	$0014(a6),d0            ; LIB_VERSION
-		bge.b	.findDos
+		bhi.b	.findDos
 		;
 		; this is part of the standard OS 2.x/3.x BootBlock
 		; (SILENTSTART is disabled by default for floppies)
@@ -97,7 +97,7 @@ sector0_1:
 		move.l	a0,(a1)                 ; LN_SUCC
 		; clear caches (do not use a 68020+ with a 1.x ROM)
 		cmpi.w	#37,$0014(a6)           ; LIB_VERSION
-		blt.b	.addTask
+		blo.b	.addTask
 		jsr	-$027C(a6)              ; _LVOCacheClearU
 .addTask:
 		movea.l	a2,a1

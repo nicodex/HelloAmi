@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o BBlock0x.bb BBlock0x.bb.asm
 BBlock0x:
 		dc.b	'DOS',0         ; BB_ID = BBID_DOS
-		dc.l	$CE5BE1EC       ; BB_CHKSUM (BBlock0x.bb.py)
+		dc.l	$D85BE1EC       ; BB_CHKSUM (BBlock0x.bb.py)
 		dc.l	880             ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -20,7 +20,7 @@ BBlock0x:
 		;
 		moveq	#37,d0
 		cmp.w	$0014(a6),d0    ; LIB_VERSION
-		bge.b	.findDos
+		bhi.b	.findDos
 		;
 		; this is part of the standard OS 2.x/3.x BootBlock
 		; (SILENTSTART is disabled by default for floppies)
