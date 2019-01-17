@@ -292,6 +292,7 @@ IAllocMemPublicClear:
 IAllocMem:
 		movea.w	#-$00C6,a0      ; _LVOAllocMem
 		bra.b	ISysCall
+	;	rts
 
 ******* icon.library/GetDiskObject *******************************************
 *
@@ -920,12 +921,12 @@ IReadStrings:
 ;
 IClose:
 		move.w	#-$0084,d0      ; _LVOIoErr
-		bra.b	IDosCall
+		bsr.b	IDosCall
 		move.l	d0,-(sp)
 		move.l	d4,d1
 		beq.b	.done
 		move.w	#-$0024,d0      ; _LVOClose
-		bra.b	IDosCall
+		bsr.b	IDosCall
 .done:
 		move.l	(sp)+,d0
 		bra.w	ISetIoErr
