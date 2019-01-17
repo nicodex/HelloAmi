@@ -32,7 +32,6 @@ project has grown to allow starting the ROM Workbench:
     Re-implementation of the original library to allow creating the Workbench
     task from V1.x ROMs without the need for the original Workbench disk
     (which you otherwise must own/buy).  
-    _Work in progress_: Icon writing is not yet implemented.
   - [`Libs/version.library`](Libs/version.library.asm)  
     Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
     tool and the Workbench/About requester (Special/Version in 1.x Workbench)

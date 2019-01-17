@@ -26,7 +26,7 @@ IconLibrary:
 		dc.l	.resTag         ; RT_MATCHTAG
 		dc.l	iconEnd         ; RT_ENDSKIP
 		dc.b	$80             ; RT_FLAGS = RTF_AUTOINIT
-		dc.b	34              ; RT_VERSION
+		dc.b	35              ; RT_VERSION
 		dc.b	9               ; RT_TYPE = NT_LIBRARY
 		dc.b	0               ; RT_PRI
 		dc.l	.resName        ; RT_NAME
@@ -36,7 +36,7 @@ IconLibrary:
 		dc.b	"icon.library",0
 		dc.b	"$VER: "
 .resIdString:
-		dc.b	"icon 34.6 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"icon 35.1 (9.9.99) [HelloAmi]",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -93,7 +93,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	34,6
+		dc.w	35,1
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -1253,11 +1253,16 @@ IPutDiskObject:
 *   RESULTS
 *	status -- TRUE if the call succeeded else FALSE
 *
+*   NOTES
+*	Extensions to the original behaviour:
+*	- remove E attribute on success or delete file on failure (WB2/WB3)
+*
 ******************************************************************************
 IPutIcon:
-		movem.l	d1-d6/a0-a4,-(sp)
+		movem.l	d1-d6/a0-a5,-(sp)
 		moveq	#0,d4
 		movea.l	a1,a3
+		movea.l	a0,a5
 		move.l	$0004+$0016(a3),d6      ; do_Gadget+gg_SelectRender
 		move.w	$0004+$000C(a3),d2      ; do_Gadget+gg_Flags
 		btst.l	#2,d2           ; log2(GFLG_GADGIMAGE)
@@ -1328,9 +1333,17 @@ IPutIcon:
 .done:
 		move.l	d6,$0004+$0016(a3)      ; do_Gadget+gg_SelectRender
 		bsr.w	IClose
-		;TODO: SetProtection/DeleteFile (WB2/WB3)
+		; status ? SetProtection : DeleteFile (WB2/WB3)
+		movea.l	a5,a0
+		moveq	#1<<1,d2        ; FIBF_EXECUTE
 		move.l	d5,d0
-		movem.l	(sp)+,d1-d6/a0-a4
+		beq.b	.fdel
+		move.w	#$0048-$00BA,d0 ; _LVOSetProtection-_LVODeleteFile
+.fdel:
+		addi.w	#-$0048,d0      ; _LVODeleteFile
+		bsr.w	IIconDosCall
+		move.l	d5,d0
+		movem.l	(sp)+,d1-d6/a0-a5
 		rts
 
 ******i icon.library/PutWBObject *********************************************
