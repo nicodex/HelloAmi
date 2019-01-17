@@ -1,6 +1,7 @@
 * text=auto
 *.adf binary
 *.asm text eol=lf
+*.bb binary
 *.fs-uae text eol=lf
 *.info binary
 *.library binary

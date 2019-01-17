@@ -1,4 +1,5 @@
 # build
+BBlock0x.bb
 Disk.info
 HelloAmi
 HelloAmi.adf
@@ -13,6 +14,8 @@ cstruct
 vasm
 
 # local
+*.adf
+*.bak
 *.bat
 *.cmd
 *.h68
