@@ -20,18 +20,13 @@ This project contains some basic classic Amiga (1.0-3.1) examples:
 It all started with the goal of learning m68k assembler
 and getting used to AmigaDOS. But in the meantime, the
 project has grown to allow starting the ROM Workbench:  
-  - [`C/LoadWB`](C/LoadWB.asm)  
-    Very simple re-implementation of the original program with the same name
-    that starts the Workbench (ignores all arguments, always returns OK, does
-    not detect running Workbench, and only supports `workbench.task` method).
-  - [`C/EndCLI`](C/EndCLI.asm)  
-    Re-implementation of the original program that closes the current CLI.
-    This allows you to close the initial CLI after booting with a 1.x ROM
-    (starting with 2.x ROMs `EndCLI` is an internal command).
   - [`Libs/icon.library`](Libs/icon.library.asm)  
     Re-implementation of the original library to allow creating the Workbench
     task from V1.x ROMs without the need for the original Workbench disk
     (which you otherwise must own/buy).  
+    Also supports the CLI command-line template `LoadWB/S,DELAY/S,EndCLI/S`.
+    Therefore, you can execute `Libs/icon.library EndCLI`
+    to close the initial CLI on 1.x ROMs (known to break AROS).
   - [`Libs/version.library`](Libs/version.library.asm)  
     Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
     tool and the Workbench/About requester (Special/Version in 1.x Workbench)

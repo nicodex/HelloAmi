@@ -4,8 +4,6 @@ Disk.info
 HelloAmi
 HelloAmi.adf
 HelloAmi.info
-C/LoadWB
-C/EndCLI
 Libs/icon.library
 Libs/version.library
 
@@ -24,4 +22,6 @@ vasm
 *.library
 *.rp9
 *.sh
+C/EndCLI
+C/LoadWB
 

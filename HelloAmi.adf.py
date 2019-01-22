@@ -645,9 +645,8 @@ class HelloAmi:
     _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
     _FILE = 'HelloAmi.adf'
     _LIST = (
-        (_DRAWER, 'C', (
-            (_ASMEXE, 'C/EndCLI', PROT_PARWED),
-            (_ASMEXE, 'C/LoadWB', PROT_PARWED),)),
+        # includes empty directories for the initial CLI assigns
+        (_DRAWER, 'C', ()),
         (_DRAWER, 'Devs', ()),
         (_ASMBIN, 'Disk.info', PROT_ARWD),
         (_DRAWER, 'Fonts', ()),
@@ -656,13 +655,22 @@ class HelloAmi:
         (_DRAWER, 'L', ()),
         (_DRAWER, 'Libs', (
             (_ASMLIB, 'Libs/icon.library', PROT_ARWED),
+            # optional for testing the icon.library (1.x ROM/WB)
+            # purchasable at https://www.amigaforever.com/media/
+            # not included on release disk (copyright protected)
             (_OPTBIN, 'Libs/info.library', PROT_ARWED),
             (_ASMLIB, 'Libs/version.library', PROT_ARWED),
-            (_OPTBIN, 'Libs/workbench.library', PROT_ARWED),)),
+            # optional for A-4000T 3.1 ROM or Cloanto's 3.X ROMs
+            # see https://www.amigaforever.com/classic/download/
+            # not included on release disk (known to break AROS)
+            (_OPTBIN, 'Libs/workbench.library', PROT_ARWED),
+            )),
         (_DRAWER, 'Prefs', (
-            (_DRAWER, 'Env-Archive', ()),)),
+            (_DRAWER, 'Env-Archive', ()),
+            )),
         (_DRAWER, 'S', (
-            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWED),)),
+            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWED),
+            )),
     )
     _vasmm68k_mot = os.path.join('vasm', 'vasmm68k_mot')
     @classmethod
