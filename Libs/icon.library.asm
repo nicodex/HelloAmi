@@ -19,8 +19,47 @@
 ;	library is present in V2+ ROMs, it isn't loaded by V2+ ROMs.
 ;
 IconLibrary:
-		moveq	#-1,d0
-		rts
+		;
+		; Normally, libraries are not expected to be run and
+		; just return with an error code (that is the reason
+		; why RTC_MATCHWORD is an ILLEGAL m68k instruction).
+		;
+		; Since the full implementation of the official V1.x
+		; library interface currently requires 5 OFS blocks,
+		; the remaining space is used for a CLI command-line
+		; interface "icon.library LoadWB/S,DELAY/S,EndCLI/S"
+		; (options case-insensitive and order is mandatory).
+		;     - LoadWB - create "workbench.task" process
+		;     - DELAY  - wait for two and a half seconds
+		;     - EndCLI - close CLI that runs the command
+		; The return code will always be 0 and the secondary
+		; result is undefined - therefore IF WARN ERROR FAIL
+		; and WHY are of no use after executing the library.
+		; However, this little feature can be used to create
+		; a minimal OFS boot floppy that loads the Workbench
+		; with every ROM/Kickstart that includes a Workbench
+		; (missing in A-4000T 3.1 ROM / Cloanto's 3.X ROMs).
+		;     2 BootBlock (e.g. BBlock0x.bb)
+		;     1 RootBlock
+		;     1 BitmapBlock
+		;     1 UserDirectoryBlock (Libs)
+		;     1 FileHeaderBlock    (Libs/icon.library)
+		;     5 FileDataBlocks     (Libs/icon.library)
+		;     1 UserDirectoryBlock (S)
+		;     1 FileHeaderBlock    (S/Startup-Sequence)
+		;     1 FileDataBlock      (S/Startup-Sequence)
+		; where the Startup-Sequence includes a single line
+		; "Libs/icon.library LoadWB DELAY EndCLI" (DELAY is
+		; optional, used to be included in older startups).
+		; With 14 of 1760 DD OFS blocks used, there's space
+		; left for a single file with 820 KB (839848 bytes,
+		; needs 1 FileHeaderBlock every 72 FileDataBlocks).
+		;
+		; Keep this a WORD branch here (makes it easier to
+		; disable this feature by replacing this code with
+		; $70,$FF,$4E,$75 (the usual MOVEQ #-1,D0 + RTS)).
+		;
+		bra.w	.LibExec
 .resTag:
 		dc.w	$4AFC           ; RT_MATCHWORD = RTC_MATCHWORD
 		dc.l	.resTag         ; RT_MATCHTAG
@@ -36,7 +75,7 @@ IconLibrary:
 		dc.b	"icon.library",0
 		dc.b	"$VER: "
 .resIdString:
-		dc.b	"icon 35.1 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"icon 35.2 (9.9.99) [NicoDE]",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -93,11 +132,123 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	35,1
+		dc.w	35,2
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
 	align	1
+
+;
+; REG(D0) LONG result
+; LibExec(
+; 	REG(D0) LONG   dosCmdLen,
+; 	REG(A0) STRPTR dosCmdBuf)
+;
+; NOTES
+; 	any registers (except SP) are allowed to be modified
+;
+.execArg:
+		dc.b	"LoadWB"
+		dc.b	"DELAY"
+		dc.b	"EndCLI"
+.wbtName:
+		dc.b	"workbench.task",0
+	align	1
+.LibExec:
+		pea	.LibNull(pc)
+		movea.l	(4).w,a6        ; AbsExecBase
+		movea.l	$0114(a6),a4    ; ThisTask
+		move.l	$00AC(a4),d7    ; pr_CLI
+		beq.b	.execRts
+		lea	.execArg(pc),a2
+		lea	IUpper(pc),a3
+		movea.l	a0,a5
+		move.l	d0,d5
+		ble.b	.execRts
+		lea	.wbtName(pc),a1
+		move.l	a1,d6
+		jsr	-$0060(a6)      ; _LVOFindResident
+		move.l	d0,d3
+		lea	.dosName(pc),a1
+		jsr	-$0198(a6)      ; _LVOOldOpenLibrary
+		tst.l	d0
+		beq.b	.execRts
+		movea.l	d0,a6
+		pea	.LoadWB(pc)
+.tstArg6:
+		moveq	#6,d0           ; strlen("LoadWB")/strlen("EndCLI")
+.testArg:
+		move.l	d0,d1
+		cmp.l	d0,d5
+		blt.b	.nextArg
+		cmpi.b	#$20,(a5)
+		bhi.b	.compArg
+		addq.l	#1,a5
+		subq.l	#1,d5
+		bra.b	.testArg
+.compArg:
+		movea.l	a5,a1
+		bsr.w	IStrMatchN
+		cmp.l	d0,d1
+		bne.b	.nextArg
+		adda.l	d1,a5
+		sub.l	d1,d5
+		moveq	#0,d0
+.nextArg:
+		adda.l	d1,a2
+.execRts:
+		rts
+.LoadWB:
+		bne.b	.DELAY
+		lsr.l	#2,d3
+		beq.b	.DELAY
+		moveq	#-1,d1
+		move.l	d1,$00B8(a4)    ; pr_WindowPtr
+		moveq	#0,d1
+		move.l	d6,-(sp)
+		move.l	$00A4(a4),d6    ; pr_ConsoleTask
+		move.l	d1,$00A4(a4)    ; pr_ConsoleTask
+		move.l	d1,$00AC(a4)    ; pr_CLI
+		jsr	-$007E(a6)      ; _LVOCurrentDir
+		move.l	(sp),d1
+		move.l	d0,(sp)
+		moveq	#1,d2
+		addq.l	#($001A+2)/4,d3 ; RT_SIZE (BPTR-aligned)
+		move.l	#6144>>6,d4
+		lsl.l	#6,d4
+		jsr	-$008A(a6)      ; _LVOCreateProc
+		move.l	(sp)+,d1
+		jsr	-$007E(a6)      ; _LVOCurrentDir
+		move.l	d7,$00AC(a4)    ; pr_CLI
+		move.l	d6,$00A4(a4)    ; pr_ConsoleTask
+.DELAY:
+		moveq	#5,d0           ; strlen("DELAY")
+		bsr.b	.testArg
+		bne.b	.EndCLI
+		moveq	#125,d1
+		jsr	-$00C6(a6)      ; _LVODelay
+.EndCLI:
+		bsr.b	.tstArg6
+		bne.b	.argDone
+		lsl.l	#2,d7
+		movea.l	d7,a2
+		lea	$001C(a2),a1    ; cli_StandardInput
+		movea.l	(a1)+,a0
+		lea	(a0,a0.l),a3
+		clr.l	$0014(a3,a3.l)  ; fh_End
+		moveq	#-1,d0          ; DOSTRUE
+		move.l	d0,$002C(a2)    ; cli_Background
+		cmpa.l	(a1),a0         ; (cli_CurrentInput)
+		beq.b	.argDone
+		move.l	(a1),d1
+		move.l	a0,(a1)
+		jsr	-$0024(a6)      ; _LVOClose
+.argDone:
+		movea.l	a6,a1
+		movea.l	(4).w,a6        ; AbsExecBase
+		jmp	-$019E(a6)      ; _LVOCloseLibrary
+	;	rts
+
 ;
 ; REG(D0) struct Library *library
 ; LibInit(
