@@ -339,7 +339,7 @@ PROT_ARWD = PROT_EXECUTE | PROT_ARCHIVE | (
     PROT_OTR_DELETE | PROT_OTR_WRITE | PROT_OTR_READ)
 PROT_ARWED = (PROT_ARWD - PROT_EXECUTE) | PROT_GRP_EXECUTE | PROT_OTR_EXECUTE
 PROT_PARWED = PROT_ARWED | PROT_PURE
-PROT_SARWED = PROT_ARWED | PROT_SCRIPT
+PROT_SARWD = PROT_ARWD | PROT_SCRIPT
 
 
 ST_USERDIR = 2
@@ -669,7 +669,7 @@ class HelloAmi:
             (_DRAWER, 'Env-Archive', ()),
             )),
         (_DRAWER, 'S', (
-            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWED),
+            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWD),
             )),
     )
     _vasmm68k_mot = os.path.join('vasm', 'vasmm68k_mot')
