@@ -1,2 +1,2 @@
 HelloAmi
-Libs/icon.library >NIL: LoadWB DELAY EndCLI ? <NIL:
+Libs/icon.library LoadWB DELAY EndCLI

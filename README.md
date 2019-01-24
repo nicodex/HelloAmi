@@ -26,7 +26,8 @@ project has grown to allow starting the ROM Workbench:
     (which you otherwise must own/buy).  
     Also supports the CLI command-line template `LoadWB/S,DELAY/S,EndCLI/S`.
     Therefore, you can execute `Libs/icon.library EndCLI`
-    to close the initial CLI on 1.x ROMs (known to break AROS).
+    to close the initial CLI on 1.x ROMs
+    (on 2.x/3.x/AROS you should prefer the internal `EndCLI` command).
   - [`Libs/version.library`](Libs/version.library.asm)  
     Starting with the 1.2 ROM/Workbench this library is used by the `C/Version`
     tool and the Workbench/About requester (Special/Version in 1.x Workbench)
@@ -72,29 +73,29 @@ Tests
 The binaries and the disk image have been tested with the following ROMs
 (included in [Amiga Forever](https://www.amigaforever.com/) 8 Plus Edition):
 
-| ROM                       | BootBlock | HelloAmi | C/EndCLI | C/LoadWB |
-|:--------------------------|:---------:|:--------:|:--------:|:--------:|
-| `amiga-os-070.rom`        |     -     |    +     |    +     |    -     |
-| `amiga-os-100.rom`        |     +     |    +     |    +     |    +     |
-| `amiga-os-110-ntsc.rom`   |     +     |    +     |    +     |    +     |
-| `amiga-os-110-pal.rom`    |     +     |    +     |    +     |    +     |
-| `amiga-os-120.rom`        |     +     |    +     |    +     |    +     |
-| `amiga-os-130.rom`        |     +     |    +     |    +     |    +     |
-| `amiga-os-130-a3000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-204.rom`        |     +     |    +     |    +     |    +     |
-| `amiga-os-204-a3000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-205-a600.rom`   |     +     |    +     |    +     |    +     |
-| `amiga-os-300-a1200.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-300-a4000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a600.rom`   |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a1200.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a3000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a4000.rom`  |     +     |    +     |    +     |    +     |
-| `amiga-os-310-a4000t.rom` |     +     |    +     |    +     |    *     |
-| `amiga-os-320-walker.rom` |     +     |    +     |    +     |    +     |
-| `aros-20170328[-ext].rom` |     +     |    +     |    -     |    +     |
-| `aros-20181209[-ext].rom` |     +     |    +     |    -     |    +     |
-| FS-UAE `internal` **      |     +     |    +     |    -     |    +     |
+| ROM                       | BootBlock | HelloAmi | LoadWB | EndCLI |
+|:--------------------------|:---------:|:--------:|:------:|:------:|
+| `amiga-os-070.rom`        |     -     |    +     |   -    |   +    |
+| `amiga-os-100.rom`        |     +     |    +     |   +    |   +    |
+| `amiga-os-110-ntsc.rom`   |     +     |    +     |   +    |   +    |
+| `amiga-os-110-pal.rom`    |     +     |    +     |   +    |   +    |
+| `amiga-os-120.rom`        |     +     |    +     |   +    |   +    |
+| `amiga-os-130.rom`        |     +     |    +     |   +    |   +    |
+| `amiga-os-130-a3000.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-204.rom`        |     +     |    +     |   +    |   +    |
+| `amiga-os-204-a3000.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-205-a600.rom`   |     +     |    +     |   +    |   +    |
+| `amiga-os-300-a1200.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-300-a4000.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-310-a600.rom`   |     +     |    +     |   +    |   +    |
+| `amiga-os-310-a1200.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-310-a3000.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-310-a4000.rom`  |     +     |    +     |   +    |   +    |
+| `amiga-os-310-a4000t.rom` |     +     |    +     |   *    |   +    |
+| `amiga-os-320-walker.rom` |     +     |    +     |   +    |   +    |
+| `aros-20170328[-ext].rom` |     +     |    +     |   +    |   -    |
+| `aros-20181209[-ext].rom` |     +     |    +     |   +    |   -    |
+| FS-UAE `internal` **      |     +     |    +     |   +    |   -    |
 
   - `*` requires `Libs/workbench.library` on disk (not included in ROM)  
     Can be downloaded for free from the
