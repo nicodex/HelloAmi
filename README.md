@@ -1,13 +1,13 @@
 HelloAmi
 ========
 
-Just another "Hello, World!" for AmigaDOS in assembler.
+Just another "Hello, World!" for AmigaOS in assembler.
 
 
 About
 -----
 
-This project contains some basic classic Amiga (1.0-3.1) examples:  
+This project contains some basic classic AmigaOS (1.0-3.1) examples:  
   - [`HelloAmi`](HelloAmi.asm)  
     Combined CLI/Workbench tool that uses the `dos.library`
     to write "Hello, World!" to the current console output
@@ -18,7 +18,7 @@ This project contains some basic classic Amiga (1.0-3.1) examples:
     button (very early in the boot process, even before DOS is ready).
 
 It all started with the goal of learning m68k assembler
-and getting used to AmigaDOS. But in the meantime, the
+and getting used to AmigaOS. But in the meantime, the
 project has grown to allow starting the ROM Workbench:  
   - [`Libs/icon.library`](Libs/icon.library.asm)  
     Re-implementation of the original library to allow creating the Workbench
