@@ -100,7 +100,6 @@ The binaries and the disk image have been tested with the following ROMs
   - `*` requires `Libs/workbench.library` on disk (not included in ROM)  
     Can be downloaded for free from the
     [Cloanto Web Workbench](https://www.amigaforever.com/classic/)
-    (but note that 45.127 does not work with the tested AROS versions)
   - `**` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
@@ -132,7 +131,7 @@ Grabs
 ![Amiga 3.1 (A600)](test/fs-uae/H/HelloAmi-amiga-os-310-a600.png)
 ### Amiga 3.1 (A1200)
 ![Amiga 3.1 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-310-a1200.png)
-### Amiga 3.1 (A4000T) + workbench.library 45.127
+### Amiga 3.1 (A4000T) + workbench.library 40.5 (24.5.93)
 ![Amiga 3.1 (A4000T)](test/fs-uae/H/HelloAmi-amiga-os-310-a4000t.png)
 ### Amiga 3.2 (beta)
 ![Amiga 3.2 (beta)](test/fs-uae/H/HelloAmi-amiga-os-320-walker.png)
