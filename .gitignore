@@ -22,6 +22,9 @@ vasm
 *.library
 *.rp9
 *.sh
+*-crop-*.png
+*-full-*.png
+*-real-*.png
 C/EndCLI
 C/LoadWB
 

@@ -1,7 +1,7 @@
 HelloAmi
 ========
 
-Just another "Hello, World!" for AmigaOS in assembler.
+Just another "Hello, World!" for AmigaOS in m68k assembly language.
 
 
 About
@@ -17,7 +17,7 @@ This project contains some basic classic AmigaOS (1.0-3.1) examples:
     uses the `intuition.library` to show a window with a "Hello, World!"
     button (very early in the boot process, even before DOS is ready).
 
-It all started with the goal of learning m68k assembler
+It all started with the goal of learning m68k assembly language
 and getting used to AmigaOS. But in the meantime, the
 project has grown to allow starting the ROM Workbench:  
   - [`Libs/icon.library`](Libs/icon.library.asm)  
@@ -109,11 +109,30 @@ The Amiga Forever `3.X` ROMs have not been tested, because the
 `workbench.library` is missing (like in the `amiga-os-310-a4000t.rom`).
 
 
+Grabs
+-----
+
+![Amiga 0.7 (NTSC, Beta)](test/fs-uae/H/HelloAmi-amiga-os-070.png)
+![Amiga 1.0 (NTSC)](test/fs-uae/H/HelloAmi-amiga-os-100.png)
+![Amiga 1.1 (NTSC)](test/fs-uae/H/HelloAmi-amiga-os-110-ntsc.png)
+![Amiga 1.2](test/fs-uae/H/HelloAmi-amiga-os-120.png)
+![Amiga 1.3](test/fs-uae/H/HelloAmi-amiga-os-130.png)
+![Amiga 2.04](test/fs-uae/H/HelloAmi-amiga-os-204.png)
+![Amiga 2.05 (A600)](test/fs-uae/H/HelloAmi-amiga-os-205-a600.png)
+![Amiga 3.0 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-300-a1200.png)
+![Amiga 3.1 (A600)](test/fs-uae/H/HelloAmi-amiga-os-310-a600.png)
+![Amiga 3.1 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-310-a1200.png)
+![Amiga 3.1 (A4000T)](test/fs-uae/H/HelloAmi-amiga-os-310-a4000t.png)
+![Amiga 3.2 (beta)](test/fs-uae/H/HelloAmi-amiga-os-320-walker.png)
+![AROS 20181209](test/fs-uae/H/HelloAmi-aros-20181209.png)
+
+
 Aside
 -----
 
 You might build and use the [`BBlock0x.bb`](BBlock0x.bb.asm)
 if an OFS floppy should be able to load DOS on 0.x beta ROMs.
+
 
 Legal
 -----
