@@ -1,7 +1,7 @@
 ; vasmm68k_mot[_<HOST>] -Fbin -pic -o HelloAmi.adf HelloAmi.adf.asm
 sector0_1:
 		dc.b	'DOS',0                 ; BB_ID = BBID_DOS
-		dc.l	$1A45B45E               ; BB_CHKSUM (HelloAmi.adf.py)
+		dc.l	$79F177AF               ; BB_CHKSUM (HelloAmi.adf.py)
 		dc.l	880                     ; BB_DOSBLOCK = ST_ROOT sector
 ;
 ; BootBlock entry point
@@ -134,7 +134,7 @@ sector0_1:
 ;
 	align	2
 TaskCode:
-		movem.l	d0/d2-d4/a2/a5-a6,-(sp) ; D0 for stack space (lib)
+		movem.l	d0/d2-d5/a2/a5-a6,-(sp) ; D0 for stack space (lib)
 		movea.l	(4).w,a5                ; AbsExecBase
 		movea.l	a5,a6
 		;
@@ -158,8 +158,17 @@ TaskCode:
 		     	                        ; WBENCHSCREEN,
 		     	                        ; signal bit
 		move.l	#(58<<16)+29,d3         ; left/top window and text
-		move.l	#$00000240,d4           ; IDCMP_GADGETUP!
+		move.w	#$0240,d4               ; IDCMP_GADGETUP!
 		      	                        ; IDCMP_CLOSEWINDOW
+		;
+		; In Amiga 0.7 (Beta) nw_IDCMPFlags, wd_IDCMPFlags and
+		; im_Class are WORDs (V27.07 writes 26.0 into header).
+		;
+		moveq	#26,d5
+		swap	d5
+		sub.l	$0014(a6),d5            ; LIB_VERSION/LIB_REVISION
+		beq.b	.openWin
+		moveq	#2,d5
 .openWin:
 		lea	taskName(pc),a1
 		lea	TaskData+$005C(pc),a0   ; TC_SIZE
@@ -178,7 +187,8 @@ TaskCode:
 		move.l	d3,(a0)+                ; nw_LeftEdge/nw_TopEdge
 		move.l	#(253<<16)+79,(a0)+     ; nw_Width/nw_Height
 		move.w	#-1,(a0)+               ; nw_DetailPen/nw_BlockPen
-		move.l	d4,(a0)+                ; nw_IDCMPFlags
+		adda.l	d5,a0
+		move.w	d4,(a0)+                ; nw_IDCMPFlags
 		move.l	#$0000140E,(a0)+        ; nw_Flags =
 		      	                        ; 	WFLG_DRAGBAR!
 		      	                        ; 	WFLG_DEPTHGADGET!
@@ -188,14 +198,15 @@ TaskCode:
 		move.l	a1,(a0)+                ; nw_FirstGadget
 		addq.l	#4,a0                   ; nw_CheckMark
 		move.l	a2,(a0)                 ; nw_Title
-		lea	-$001A(a0),a0           ; -nw_Title
-		move.w	d2,$002E(a0)            ; nw_Type = WBENCHSCREEN
+		lea	-$001A+2(a0),a0         ; -nw_Title
+		suba.l	d5,a0
+		move.w	d2,$002E-2(a0,d5.l)     ; nw_Type = WBENCHSCREEN
 		jsr	-$00CC(a6)              ; _LVOOpenWindow
 		move.l	d0,(sp)
 		beq.b	.openWin
 		movea.l	d0,a0
 		; get the IDCMP message port and signal mask
-		movea.l	$0056(a0),a2            ; wd_UserPort
+		movea.l	$0056-2(a0,d5.l),a2     ; wd_UserPort
 		move.b	$000F(a2),d0            ; mp_SigBit
 		lsl.l	d0,d2
 .waitWin:
@@ -212,13 +223,13 @@ TaskCode:
 		tst.l	d0
 		beq.b	.waitWin
 		movea.l	d0,a1
-		move.l	$0014(a1),d3            ; im_Class
+		move.w	$0014(a1,d5.l),d3       ; im_Class
 		jsr	-$017A(a6)              ; _LVOReplyMsg
 		;
 		; ...until the user releases the mouse select button over
 		; the window's close gadget or the "Hello, World!" gadget
 		;
-		and.l	d4,d3                   ; any of nw_IDCMPFlags
+		and.w	d4,d3                   ; any of nw_IDCMPFlags
 		beq.b	.waitWin
 		; cleanup and return (task is removed and memory is freed)
 		movea.l	(sp)+,a0
@@ -227,7 +238,7 @@ TaskCode:
 		movea.l	a6,a1
 		movea.l	a5,a6
 		jsr	-$019E(a6)              ; _LVOCloseLibrary
-		movem.l	(sp)+,d2-d4/a2/a5-a6
+		movem.l	(sp)+,d2-d5/a2/a5-a6
 		rts
 intName:
 		dc.b	"intuition.library",0

@@ -75,7 +75,7 @@ The binaries and the disk image have been tested with the following ROMs
 
 | ROM                       | BootBlock | HelloAmi | LoadWB | EndCLI |
 |:--------------------------|:---------:|:--------:|:------:|:------:|
-| `amiga-os-070.rom`        |     -     |    +     |   -    |   +    |
+| `amiga-os-070.rom`        |     +     |    +     |   -    |   +    |
 | `amiga-os-100.rom`        |     +     |    +     |   +    |   +    |
 | `amiga-os-110-ntsc.rom`   |     +     |    +     |   +    |   +    |
 | `amiga-os-110-pal.rom`    |     +     |    +     |   +    |   +    |
