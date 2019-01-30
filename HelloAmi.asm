@@ -60,7 +60,14 @@ HelloAmi:
 		pea	.textStr
 		move.l	(sp)+,d2
 		moveq	#.textEnd-.textStr,d3
-		jsr	-$0030(a6)      ; _LVOWrite
+		moveq	#-$0030,d6      ; _LVOWrite
+		; use FPuts (buffered output) on DOS version 36+
+		cmpi.w	#36,$0014(a6)   ; LIB_VERSION
+		blo.b	.writeStr
+		subi.w	#$0156-$0030,d6 ; -_LVOFPuts+_LVOWrite
+		moveq	#0,d3
+.writeStr:
+		jsr	(a6,d6.w)
 		sub.l	d0,d3
 		beq.b	.closeCon
 .dosError:
@@ -104,13 +111,12 @@ HelloAmi:
 		rts
 .conSpec:
 		; continued with .dosName as title to save bytes
-		; (1.x CON handlers need non-empty width/height,
-		; and the segment alignment allows another char,
-		; it's used to avoid hiding the Workbench title)
-		dc.b	"CON:/9/253/79/"
+		; (1.x CON handlers need non-empty width/height)
+		dc.b	"CON://253/79/"
 .dosName:
 		dc.b	"dos.library",0
 .textStr:
 		dc.b	"Hello, World!",10
 .textEnd:
+		dc.b	0
 	align	2
