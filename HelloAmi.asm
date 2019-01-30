@@ -1,6 +1,14 @@
 ; vasmm68k_mot[_<HOST>] -Fhunkexe -pic -nosym -o HelloAmi HelloAmi.asm
+;
+; REG(D0) LONG result
+; startup(
+; 	REG(D0) LONG   dosCmdLen,
+; 	REG(A0) STRPTR dosCmdBuf)
+;
+; NOTES
+; 	any registers (except SP) are allowed to be modified
+;
 HelloAmi:
-		movem.l	d2-d5/a2/a6,-(sp)
 		moveq	#122,d3         ; ERROR_INVALID_RESIDENT_LIBRARY
 		moveq	#0,d4           ; WBStartup message
 		moveq	#0,d5           ; new console handle
@@ -93,11 +101,12 @@ HelloAmi:
 		beq.b	.return
 		moveq	#20,d0          ; RETURN_FAIL
 .return:
-		movem.l	(sp)+,d2-d5/a2/a6
 		rts
 .conSpec:
 		; continued with .dosName as title to save bytes
-		; (1.x CON handlers need non-empty width/height)
+		; (1.x CON handlers need non-empty width/height,
+		; and the segment alignment allows another char,
+		; it's used to avoid hiding the Workbench title)
 		dc.b	"CON:/9/253/79/"
 .dosName:
 		dc.b	"dos.library",0
