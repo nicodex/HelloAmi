@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# https://www.python.org/dev/peps/pep-0343/#transition-plan
 from __future__ import with_statement
 
 import ctypes
@@ -8,6 +9,7 @@ import os
 import subprocess
 import sys
 try:
+    # https://docs.python.org/3.0/whatsnew/3.0.html#builtins
     from functools import reduce
 except ImportError:
     pass
@@ -31,23 +33,17 @@ BOOTSECTS = 2
 class BootBlock(ctypes.BigEndianStructure):
     _fields_ = [
         ('disk_type', ctypes.c_uint32),
-        ('chksum'   , ctypes.c_uint32),
+        ('checksum' , ctypes.c_uint32),
         ('dos_block', ctypes.c_uint32),
         ('entry'    , ctypes.c_uint32 * (((TD_SECTOR * BOOTSECTS) - 12) // 4))]
-    
     @classmethod
     def from_rawio(cls, f):
         b = cls()
         if f.readinto(b) != ctypes.sizeof(cls):
             raise Exception('failed to read %s structure' % cls.__name__)
         return b
-    
-    @property
-    def checksum(self):
-        return self.chksum
-    
     def update_checksum(self):
-        self.chksum = uint32_not(
+        self.checksum = uint32_not(
             reduce(uint32_addc, self.entry,
                 uint32_addc(self.disk_type, self.dos_block)))
         return self
