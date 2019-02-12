@@ -2,6 +2,7 @@
 
 from __future__ import with_statement
 
+import ctypes
 import glob
 import os
 import subprocess
@@ -10,9 +11,6 @@ try:
     from functools import reduce
 except ImportError:
     pass
-
-sys.path.insert(0, 'python-cstruct')  # submodule
-import cstruct  # https://pypi.org/project/cstruct/
 
 
 def as_uint32(a):
@@ -30,16 +28,19 @@ def uint32_not(a):
 TD_SECTOR = 512
 BOOTSECTS = 2
 
-cstruct.define('BBENTRY_LEN', int(((TD_SECTOR * BOOTSECTS) - 12) // 4))
-
-class BootBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint32_t disk_type;
-        uint32_t chksum;
-        uint32_t dos_block;
-        uint32_t entry[BBENTRY_LEN];
-    """
+class BootBlock(ctypes.BigEndianStructure):
+    _fields_ = [
+        ('disk_type', ctypes.c_uint32),
+        ('chksum'   , ctypes.c_uint32),
+        ('dos_block', ctypes.c_uint32),
+        ('entry'    , ctypes.c_uint32 * (((TD_SECTOR * BOOTSECTS) - 12) // 4))]
+    
+    @classmethod
+    def from_rawio(cls, f):
+        b = cls()
+        if f.readinto(b) != ctypes.sizeof(cls):
+            raise Exception('failed to read %s structure' % cls.__name__)
+        return b
     
     @property
     def checksum(self):
@@ -51,7 +52,7 @@ class BootBlock(cstruct.CStruct):
                 uint32_addc(self.disk_type, self.dos_block)))
         return self
 
-assert BootBlock.size == TD_SECTOR * BOOTSECTS
+assert ctypes.sizeof(BootBlock) == TD_SECTOR * BOOTSECTS
 
 class BBlock0x:
     _FILE = 'BBlock0x.bb'
@@ -70,10 +71,10 @@ class BBlock0x:
                 '-Fbin', '-m68000', '-no-fpu',
                 '-o', p, p + '.asm'])
         with open(p, 'r+b') as f:
-            b = BootBlock(f.read(BootBlock.size))
+            b = BootBlock.from_rawio(f)
             c = b.checksum
             f.seek(0)
-            f.write(b.update_checksum().pack())
+            f.write(b.update_checksum())
             if c != b.checksum:
                 print('checksum updated: $%08X -> $%08X' % (c, b.checksum))
     @classmethod
