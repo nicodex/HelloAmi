@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+# https://www.python.org/dev/peps/pep-0343/#transition-plan
 from __future__ import with_statement
 
 import calendar
+import ctypes
 import datetime
 import decimal
 import glob
@@ -13,12 +15,43 @@ import subprocess
 import sys
 import time
 try:
+    # https://docs.python.org/3.0/whatsnew/3.0.html#builtins
     from functools import reduce
 except ImportError:
     pass
+try:
+    # https://bugs.python.org/issue4376
+    class _Issue4376_ClsA(ctypes.BigEndianStructure):
+        _fields_ = [('x', ctypes.c_uint32)]
+    class _Issue4376_ClsB(ctypes.BigEndianStructure):
+        _fields_ = [('a', _Issue4376_ClsA)]
+except TypeError:
+    def _Issue4376_other_endian(typ):
+        if hasattr(typ, ctypes._endian._OTHER_ENDIAN):
+            return getattr(typ, ctypes._endian._OTHER_ENDIAN)
+        if isinstance(typ, ctypes._endian._array_type):
+            return _Issue4376_other_endian(typ._type_) * typ._length_
+        if issubclass(typ, ctypes.Structure):
+            return typ
+        raise TypeError('This type does not support other endian: %s' % typ)
+    ctypes._endian._other_endian = _Issue4376_other_endian
+else:
+    pass
 
-sys.path.insert(0, 'python-cstruct')  # submodule
-import cstruct  # https://pypi.org/project/cstruct/
+
+class StructBase(ctypes.BigEndianStructure):
+    def clear(self):
+        ctypes.memset(ctypes.addressof(self), 0, ctypes.sizeof(self))
+        return self
+    @classmethod
+    def from_rawio(cls, f):
+        b = cls()
+        if f.readinto(b) != ctypes.sizeof(cls):
+            raise Exception('failed to read %s structure' % cls.__name__)
+        return b
+    @classmethod
+    def size(cls):
+        return ctypes.sizeof(cls)
 
 
 AMIGA_EPOCH = int(
@@ -29,14 +62,11 @@ AMIGA_EPOCH = int(
 
 TICKS_PER_SECOND = 50
 
-class DateStamp(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint32_t days;
-        uint32_t minute;
-        uint32_t tick;
-    """
-    
+class DateStamp(StructBase):
+    _fields_ = [
+        ('days'  , ctypes.c_uint32),
+        ('minute', ctypes.c_uint32),
+        ('tick'  , ctypes.c_uint32)]
     def isoformat(self, sep='T', timespec='auto'):
         sep = 'T' if sep is None else chr(ord(sep))
         i = 0 if timespec is None else [
@@ -65,7 +95,6 @@ class DateStamp(cstruct.CStruct):
                 return '%s.%03d' % (s, ((r * 1000) // TICKS_PER_SECOND))
             return '%s.%02d' % (s, (r * 100) // TICKS_PER_SECOND)
         return s
-
     @staticmethod
     def gmtime(secs=None):
         secs = time.time() if secs is None else float(secs)
@@ -73,13 +102,14 @@ class DateStamp(cstruct.CStruct):
         d = decimal.Decimal('%.9f' % secs)
         if d > AMIGA_EPOCH:
             d -= AMIGA_EPOCH
-            ds.days = int(d // 86400);
-            d -= ds.days * 86400;
-            ds.minute = int(d // 60);
-            d -= ds.minute * 60;
+            ds.days = int(d // 86400)
+            d -= ds.days * 86400
+            ds.minute = int(d // 60)
+            d -= ds.minute * 60
             d *= TICKS_PER_SECOND
-            ds.tick = int(d.to_integral(decimal.ROUND_DOWN));
+            ds.tick = int(d.to_integral(decimal.ROUND_DOWN))
         return ds
+assert DateStamp.size() == 12
 
 
 def as_uint32(a):
@@ -109,65 +139,46 @@ TD_SECTOR = 512
 BOOTSECTS = 2
 BBNAME_DOS = 0x444F5300  # 'DOS\0' (OFS)
 
-cstruct.define('BBENTRY_LEN', int(((TD_SECTOR * BOOTSECTS) - 12) // 4))
-
-class BootBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint32_t disk_type;
-        uint32_t chksum;
-        uint32_t dos_block;
-        uint32_t entry[BBENTRY_LEN];
-    """
-    
-    @property
-    def checksum(self):
-        return self.chksum
-    
+class BootBlock(StructBase):
+    _fields_ = [
+        ('disk_type', ctypes.c_uint32),
+        ('checksum' , ctypes.c_uint32),
+        ('dos_block', ctypes.c_uint32),
+        ('entry'    , ctypes.c_uint32 * (((TD_SECTOR * BOOTSECTS) - 12) // 4))]
     def update_checksum(self):
-        self.chksum = uint32_not(
+        self.checksum = uint32_not(
             reduce(uint32_addc, self.entry,
                 uint32_addc(self.disk_type, self.dos_block)))
         return self
-
-assert BootBlock.size == TD_SECTOR * BOOTSECTS
+assert BootBlock.size() == TD_SECTOR * BOOTSECTS
 
 
 def adf_checksum(block):
-    f = '>%dI' % int(block.size // 4)
+    f = '>%dI' % int(block.size() // 4)
     return uint32_neg(
-        reduce(uint32_add, struct.unpack(f, block.pack()),
+        reduce(uint32_add, struct.unpack(f, block),
             uint32_neg(block.checksum)))
 
 
 BITMAP_LEN = int((((NUMTRACKS * NUMSECS) - BOOTSECTS) - 1) // 32) + 1
-cstruct.define('BITMAP_LEN', BITMAP_LEN)
-cstruct.define('BITMAP_RES', int(TD_SECTOR // 4) - 1 - BITMAP_LEN)
 
-class BitmapBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint32_t checksum;
-        uint32_t bitmap[BITMAP_LEN];
-        uint32_t reserved[BITMAP_RES];
-    """
-    
+class BitmapBlock(StructBase):
+    _fields_ = [
+        ('checksum', ctypes.c_uint32),
+        ('bitmap'  , ctypes.c_uint32 * BITMAP_LEN),
+        ('reserved', ctypes.c_uint32 * ((TD_SECTOR // 4) - 1 - BITMAP_LEN))]
     def update_checksum(self):
         self.checksum = adf_checksum(self)
         return self
-    
     def __getitem__(self, key):
         i, b = divmod(int(key) - BOOTSECTS, 32)
         return bool(self.bitmap[i] & (1 << b))
-    
     def __setitem__(self, key, free):
         i, b = divmod(int(key) - BOOTSECTS, 32)
         if free:
             self.bitmap[i] |= 1 << b
         else:
             self.bitmap[i] &= uint32_not(1 << b)
-    
-    @property
     def next_free(self):
         for key in range((NUMTRACKS * NUMSECS) // 2, NUMTRACKS * NUMSECS):
             if self.__getitem__(key):
@@ -176,52 +187,46 @@ class BitmapBlock(cstruct.CStruct):
             if self.__getitem__(key):
                 return key
         return None
-    
     def use_next(self):
-        key = self.next_free
+        key = self.next_free()
         if key is None:
             raise Exception('disk is full')
         self.__setitem__(key, False)
         return key
-
-assert BitmapBlock.size == TD_SECTOR
+assert BitmapBlock.size() == TD_SECTOR
 
 
 T_SHORT = 2  # RootBlock, UserDirectoryBlock, FileHeaderBlock
 T_DATA  = 8  # FileDataBlock
 T_LIST = 16  # FileHeaderBlock (extension)
 
-class BlockHeader(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint32_t block_type;
-        uint32_t own_key;
-        uint32_t seq_num;
-        uint32_t data_size;
-        uint32_t next_block;
-        uint32_t checksum;
-    """
+class BlockHeader(StructBase):
+    _fields_ = [
+        ('block_type', ctypes.c_uint32),
+        ('own_key'   , ctypes.c_uint32),
+        ('seq_num'   , ctypes.c_uint32),
+        ('data_size' , ctypes.c_uint32),
+        ('next_block', ctypes.c_uint32),
+        ('checksum'  , ctypes.c_uint32)]
+    def update_checksum(self):
+        self.checksum = adf_checksum(self)
+        return self
 
 
-TD_HTSIZE = int((TD_SECTOR - 200 - BlockHeader.size) // 4)
-cstruct.define('TD_HTSIZE', TD_HTSIZE)
+TD_HTSIZE = int((TD_SECTOR - 200 - BlockHeader.size()) // 4)
 
 def ofs_toupper(c):
     if (0x61 <= c) and (c <= 0x7A):
         return c - 0x20
     return c
 
-class OFSName(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint8_t length;
-        uint8_t buffer[30];
-        uint8_t reserved[5];
-    """
-    
+class OFSName(StructBase):
+    _fields_ = [
+        ('length'  , ctypes.c_uint8),
+        ('buffer'  , ctypes.c_uint8 * 30),
+        ('reserved', ctypes.c_uint8 *  5)]
     def get_string(self):
         return ''.join(map(chr, self.buffer[:self.length]))
-    
     def set_string(self, s):
         if len(s) > len(self.buffer):
             raise Exception('name too long')
@@ -229,13 +234,11 @@ class OFSName(cstruct.CStruct):
         self.length = len(s)
         for i in range(self.length):
             self.buffer[i] = ord(chr(ord(s[i])))
-    
     @staticmethod
     def from_string(s):
         n = OFSName()
         n.set_string(s)
         return n
-    
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             other = from_string(str(other))
@@ -245,30 +248,24 @@ class OFSName(cstruct.CStruct):
             if ofs_toupper(self.buffer[i]) != ofs_toupper(other.buffer[i]):
                 return False
         return True
-    
     def __ne__(self, other):
         return not self.__eq__(other)
-    
     def __hash__(self):
         h = self.length
         for i in range(self.length):
             h *= 13
             h += ofs_toupper(self.buffer[i])
-            h &= 0x07FF;
+            h &= 0x07FF
         return h % TD_HTSIZE
 
 
-class AFSComment(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        uint8_t length;
-        uint8_t buffer[79];
-        uint8_t reserved[12];
-    """
-    
+class AFSComment(StructBase):
+    _fields_ = [
+        ('length'  , ctypes.c_uint8),
+        ('buffer'  , ctypes.c_uint8 * 79),
+        ('reserved', ctypes.c_uint8 * 12)]
     def get_string(self):
         return ''.join(map(chr, self.buffer[:self.length]))
-    
     def set_string(self, s):
         if len(s) > len(self.buffer):
             raise Exception('comment too long')
@@ -276,7 +273,6 @@ class AFSComment(cstruct.CStruct):
         self.length = len(s)
         for i in range(self.length):
             self.buffer[i] = ord(chr(ord(s[i])))
-    
     @staticmethod
     def from_string(s):
         c = AFSComment()
@@ -285,37 +281,24 @@ class AFSComment(cstruct.CStruct):
 
 
 ST_ROOT = 1
+ROOT_BM_COUNT = 25
 
-cstruct.define('ROOT_BM_COUNT', 25)
-
-class RootBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        struct BlockHeader header;      /* [T_SHORT,0,0,len(hash_table),0,] */
-        uint32_t           hash_table[TD_HTSIZE];
-        int32_t            bitmap_flag;
-        uint32_t           bitmap[ROOT_BM_COUNT];
-        uint32_t           bit_extend;
-        struct DateStamp   days;
-        struct OFSName     name;
-        uint32_t           link;        /* always 0 */
-        struct DateStamp   disk_mod;
-        struct DateStamp   create_days;
-        uint32_t           hash_chain;  /* always 0 */
-        uint32_t           parent;      /* always 0 */
-        uint32_t           extension;
-        int32_t            sub_type;    /* ST_ROOT */
-    """
-    
-    @property
-    def checksum(self):
-        return self.header.checksum
-    
-    def update_checksum(self):
-        self.header.checksum = adf_checksum(self);
-        return self
-
-assert RootBlock.size == TD_SECTOR
+class RootBlock(BlockHeader):  # [T_SHORT,0,0,len(hash_table),0,]
+    _fields_ = [
+        ('hash_table' , ctypes.c_uint32 * TD_HTSIZE),
+        ('bitmap_flag', ctypes.c_int32),
+        ('bitmap'     , ctypes.c_uint32 * ROOT_BM_COUNT),
+        ('bit_extend' , ctypes.c_uint32),
+        ('days'       , DateStamp),
+        ('name'       , OFSName),
+        ('link'       , ctypes.c_uint32),  # always 0
+        ('disk_mod'   , DateStamp),
+        ('create_days', DateStamp),
+        ('hash_chain' , ctypes.c_uint32),  # always 0
+        ('parent'     , ctypes.c_uint32),  # always 0
+        ('extension'  , ctypes.c_uint32),
+        ('sub_type'   , ctypes.c_int32)]   # ST_ROOT
+assert RootBlock.size() == TD_SECTOR
 
 
 PROT_DELETE      = (1 <<  0)  # NOT deletable
@@ -344,116 +327,74 @@ PROT_SARWD = PROT_ARWD | PROT_SCRIPT
 
 ST_USERDIR = 2
 
-class UserDirectoryBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        struct BlockHeader header;      /* [T_SHORT,key,0,0,0,] */
-        uint32_t           hash_table[TD_HTSIZE];
-        uint32_t           bitmap_flag; /* reserved for RootBlock */
-        uint16_t           owner_uid;
-        uint16_t           owner_gid;
-        uint32_t           protect;
-        uint32_t           byte_size;  /* reserved for FileHeaderBlock */
-        struct AFSComment  comment;
-        struct DateStamp   days;
-        struct OFSName     name;
-        uint32_t           link;
-        uint32_t           back_link;
-        uint32_t           reserved[5]; /* reserved for RootBlock */
-        uint32_t           hash_chain;
-        uint32_t           parent;
-        uint32_t           extension;
-        int32_t            sub_type;    /* ST_USERDIR */
-    """
-    
+class UserDirectoryBlock(BlockHeader):  # [T_SHORT,key,0,0,0,]
+    _fields_ = [
+        ('hash_table' , ctypes.c_uint32 * TD_HTSIZE),
+        ('bitmap_flag', ctypes.c_uint32),      # reserved for RootBlock
+        ('owner_uid'  , ctypes.c_uint16),
+        ('owner_gid'  , ctypes.c_uint16),
+        ('protect'    , ctypes.c_uint32),
+        ('byte_size'  , ctypes.c_uint32),      # reserved for FileHeaderBlock
+        ('comment'    , AFSComment),
+        ('days'       , DateStamp),
+        ('name'       , OFSName),
+        ('link'       , ctypes.c_uint32),
+        ('back_link'  , ctypes.c_uint32),
+        ('reserved'   , ctypes.c_uint32 * 5),  # reserved for RootBlock
+        ('hash_chain' , ctypes.c_uint32),
+        ('parent'     , ctypes.c_uint32),
+        ('extension'  , ctypes.c_uint32),
+        ('sub_type'   , ctypes.c_int32)]       # ST_USERDIR
     @property
     def key(self):
-        return self.header.own_key
-
-    @property
-    def checksum(self):
-        return self.header.checksum
-    
-    def update_checksum(self):
-        self.header.checksum = adf_checksum(self);
-        return self
-
-assert UserDirectoryBlock.size == TD_SECTOR
+        return self.own_key
+assert UserDirectoryBlock.size() == TD_SECTOR
 
 
 ST_FILE = -3
 
-class FileHeaderBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        struct BlockHeader header;      /* [T_SHORT,key,blocks,slots,first,] */
-        uint32_t           hash_table[TD_HTSIZE]; /* slot keys, rbegin..rend */
-        uint32_t           bitmap_flag; /* reserved for RootBlock */
-        uint16_t           owner_uid;
-        uint16_t           owner_gid;
-        uint32_t           protect;
-        uint32_t           byte_size;
-        struct AFSComment  comment;
-        struct DateStamp   days;
-        struct OFSName     name;
-        uint32_t           link;
-        uint32_t           back_link;
-        uint32_t           reserved[5]; /* reserved for RootBlock */
-        uint32_t           hash_chain;
-        uint32_t           parent;
-        uint32_t           extension;
-        int32_t            sub_type;    /* ST_FILE */
-    """
-    
+class FileHeaderBlock(BlockHeader):  # [T_SHORT,key,blocks,slots,first,]
+    _fields_ = [
+        ('hash_table' , ctypes.c_uint32 * TD_HTSIZE),
+        ('bitmap_flag', ctypes.c_uint32),      # reserved for RootBlock
+        ('owner_uid'  , ctypes.c_uint16),
+        ('owner_gid'  , ctypes.c_uint16),
+        ('protect'    , ctypes.c_uint32),
+        ('byte_size'  , ctypes.c_uint32),
+        ('comment'    , AFSComment),
+        ('days'       , DateStamp),
+        ('name'       , OFSName),
+        ('link'       , ctypes.c_uint32),
+        ('back_link'  , ctypes.c_uint32),
+        ('reserved'   , ctypes.c_uint32 * 5),  # reserved for RootBlock
+        ('hash_chain' , ctypes.c_uint32),
+        ('parent'     , ctypes.c_uint32),
+        ('extension'  , ctypes.c_uint32),
+        ('sub_type'   , ctypes.c_int32)]       # ST_FILE
     @property
     def key(self):
-        return self.header.own_key
-
-    @property
-    def checksum(self):
-        return self.header.checksum
-    
-    def update_checksum(self):
-        self.header.checksum = adf_checksum(self);
-        return self
-
-assert FileHeaderBlock.size == TD_SECTOR
+        return self.own_key
+assert FileHeaderBlock.size() == TD_SECTOR
 
 
-OFSFILEDATA_SIZE = TD_SECTOR - BlockHeader.size
-cstruct.define('OFSFILEDATA_SIZE', OFSFILEDATA_SIZE)
+OFSFILEDATA_SIZE = TD_SECTOR - BlockHeader.size()
 
-class FileDataBlock(cstruct.CStruct):
-    __byte_order__ = cstruct.BIG_ENDIAN
-    __struct__ = """
-        struct BlockHeader header;      /* [T_DATA,key,block,size,next,] */
-        uint8_t            file_data[OFSFILEDATA_SIZE];
-    """
-    
+class FileDataBlock(BlockHeader):  # [T_DATA,key,block,size,next,]
+    _fields_ = [
+        ('file_data', ctypes.c_uint8 * OFSFILEDATA_SIZE)]
     @property
     def key(self):
-        return self.header.own_key
-
-    @property
-    def checksum(self):
-        return self.header.checksum
-    
-    def update_checksum(self):
-        self.header.checksum = adf_checksum(self);
-        return self
-
-assert FileDataBlock.size == TD_SECTOR
+        return self.own_key
+assert FileDataBlock.size() == TD_SECTOR
 
 
 class OFSDisk:
     def _read_block(self, cls, key):
         self._file.seek(key * TD_SECTOR)
-        return cls(self._file.read(cls.size))
-    
+        return cls.from_rawio(self._file)
     def _write_block(self, key, block):
         self._file.seek(key * TD_SECTOR)
-        self._file.write(block.update_checksum().pack())
-    
+        self._file.write(block.update_checksum())
     def _get_block(self, key):
         block = self._blocks.get(key)
         if block is None:
@@ -461,15 +402,15 @@ class OFSDisk:
                 block = self._read_block(BootBlock, key)
             else:
                 block = self._read_block(FileHeaderBlock, key)
-                if T_SHORT == block.header.block_type:
+                if T_SHORT == block.block_type:
                     if ST_ROOT == block.sub_type:
-                        block = RootBlock(block.pack())
+                        block = self._read_block(RootBlock, key)
                         block.key = key
                         if block.extension:
                             raise Exception(
                                 'root extensions are not supported')
                     elif ST_USERDIR == block.sub_type:
-                        block = UserDirectoryBlock(block.pack())
+                        block = self._read_block(UserDirectoryBlock, key)
                         if block.extension:
                             raise Exception(
                                 'dir extensions are not supported')
@@ -477,19 +418,18 @@ class OFSDisk:
                         raise Exception(
                             'unsupported short type %d in sector %d' %
                             (block.sub_type, key))
-                elif T_DATA == block.header.block_type:
-                    block = FileDataBlock(block.pack())
+                elif T_DATA == block.block_type:
+                    block = self._read_block(FileDataBlock, key)
                 else:
                     raise Exception(
                         'unsupported block type %d in sector %d' %
-                        (block.header.block_type, key))
+                        (block.block_type, key))
             checksum = block.checksum
             if checksum != block.update_checksum().checksum:
                 print('checksum missmatch in block %d: $%08X -> $%08X' %
                     (key, checksum, block.checksum))
             self._blocks[key] = block
         return block
-    
     def _get_path(self, block):
         path = ''
         if block.parent:
@@ -499,7 +439,6 @@ class OFSDisk:
                 path = block.name.get_string() + '/' + path
                 block = self._get_block(block.parent)
         return block.name.get_string() + ':' + path
-    
     def __init__(self, file):
         self._file = open(file, 'r+b')
         self._blocks = {}
@@ -510,9 +449,9 @@ class OFSDisk:
             raise Exception('unsupported disk format')
         self._root = self._get_block(self._boot.dos_block)
         if (not isinstance(self._root, RootBlock) or
-            (self._root.header.own_key != 0) or
-            (self._root.header.seq_num != 0) or
-            (self._root.header.data_size != TD_HTSIZE) or
+            (self._root.own_key != 0) or
+            (self._root.seq_num != 0) or
+            (self._root.data_size != TD_HTSIZE) or
             (self._root.bitmap_flag == 0) or
             (self._root.bitmap[0] == 0) or
             (max(self._root.bitmap[1:]) != 0)):
@@ -526,11 +465,9 @@ class OFSDisk:
             print('bitmap checksum missmatch: $%08X -> $%08X' %
                 (bitmap_checksum, bitmap.checksum))
         self._blocks[self._root.bitmap[0]] = self._bitmap
-    
     @property
     def root(self):
         return self._root
-    
     def mkdir(self, dir, name, mdays=None, prot=None):
         if dir is None:
             dir = self._root
@@ -539,9 +476,8 @@ class OFSDisk:
         if prot is None:
             prot = PROT_ARWED
         block = UserDirectoryBlock(
-            header=BlockHeader(
-                block_type=T_SHORT,
-                own_key=self._bitmap.use_next()),
+            block_type=T_SHORT,
+            own_key=self._bitmap.use_next(),
             protect=prot,
             days=mdays,
             parent=dir.key,
@@ -561,7 +497,6 @@ class OFSDisk:
             hash_next = next.hash_chain
         self._blocks[block.key] = block
         return block
-    
     def add_file(self, dir, file, mdays=None, prot=None):
         if dir is None:
             dir = self._root
@@ -575,10 +510,9 @@ class OFSDisk:
         block_full, block_part = divmod(file_size, OFSFILEDATA_SIZE)
         block_count = block_full + bool(block_part)
         head = FileHeaderBlock(
-            header=BlockHeader(
-                block_type=T_SHORT,
-                own_key=self._bitmap.use_next(),
-                seq_num=min(TD_HTSIZE, block_count)),
+            block_type=T_SHORT,
+            own_key=self._bitmap.use_next(),
+            seq_num=min(TD_HTSIZE, block_count),
             protect=prot,
             byte_size=file_size,
             days=mdays,
@@ -608,10 +542,9 @@ class OFSDisk:
                 slot = block_num % TD_HTSIZE
                 if (block_num > 0) and (0 == slot):
                     head_next = FileHeaderBlock(
-                        header=BlockHeader(
-                            block_type=T_LIST,
-                            own_key=self._bitmap.use_next(),
-                            seq_num=min(TD_HTSIZE, block_count - block_num)),
+                        block_type=T_LIST,
+                        own_key=self._bitmap.use_next(),
+                        seq_num=min(TD_HTSIZE, block_count - block_num),
                         parent=head.key,
                         sub_type=ST_FILE)
                     self._blocks[head_next.key] = head_next
@@ -619,23 +552,21 @@ class OFSDisk:
                     head_curr = head_next
                 data_key = self._bitmap.use_next()
                 data = FileDataBlock(
-                    header=BlockHeader(
-                        block_type=T_DATA,
-                        own_key=head.key,
-                        seq_num=block_num + 1,
-                        data_size=size)
+                    block_type=T_DATA,
+                    own_key=head.key,
+                    seq_num=block_num + 1,
+                    data_size=size
                     )
                 file_data = struct.unpack('%dB' % size, f.read(size))
                 for i in range(len(file_data)):
                     data.file_data[i] = file_data[i]
                 head_curr.hash_table[TD_HTSIZE - slot - 1] = data_key
                 self._blocks[data_key] = data
-                data_prev.header.next_block = data_key
+                data_prev.next_block = data_key
                 data_prev = data
                 block_num += 1
                 size_left -= size
         return head
-    
     def save(self):
         for key, block in self._blocks.items():
             self._write_block(key, block)
