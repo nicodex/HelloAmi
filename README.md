@@ -48,11 +48,7 @@ Dependencies:
     the Motorola syntax module (`make CPU=m68k SYNTAX=mot`). In the end,
     the build script expects to find the compiler executable with
     `vasm/vasmm68k_mot*` (e.g. `vasm\vasmm68k_mot_win32.exe` on Windows).
-  - [Python](https://www.python.org/) 2.5 or newer and the
-    [python-cstruct](https://github.com/nicodex/python-cstruct) submodule  
-    I created my own fork, because the build script requires some features
-    that have been introduced after the official v1.7 release (uintX_t types)
-    and I still need Python 2.5 support (expected to be dropped upstream).
+  - [Python](https://www.python.org/) 2.5 or newer for the build scripts
 
 No external headers or include files (e.g. Amiga NDK) are required
 because all used offsets and constants are hard-coded in the source.
