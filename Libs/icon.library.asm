@@ -214,7 +214,7 @@ IconLibrary:
 		move.l	d0,(sp)
 		moveq	#1,d2
 		addq.l	#($001A+2)/4,d3 ; RT_SIZE (BPTR-aligned)
-		move.l	#6144>>6,d4
+		moveq	#6144>>6,d4
 		lsl.l	#6,d4
 		jsr	-$008A(a6)      ; _LVOCreateProc
 		move.l	(sp)+,d1

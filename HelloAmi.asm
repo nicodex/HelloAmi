@@ -44,7 +44,7 @@ HelloAmi:
 		;
 		; else request a new window with the CON handler
 		;
-		pea	.conSpec
+		pea	.conSpec(pc)
 		move.l	(sp)+,d1
 		move.l	#1006,d2        ; MODE_NEWFILE
 		jsr	-$001E(a6)      ; _LVOOpen
@@ -57,7 +57,7 @@ HelloAmi:
 		; to initialize it to zero (OK) while the result
 		; of the dos.library/Write is tested for success
 		;
-		pea	.textStr
+		pea	.textStr(pc)
 		move.l	(sp)+,d2
 		moveq	#.textEnd-.textStr,d3
 		moveq	#-$0030,d6      ; _LVOWrite

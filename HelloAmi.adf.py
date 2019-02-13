@@ -631,7 +631,7 @@ class HelloAmi:
             else:
                 args.extend(('-Fhunkexe', '-nosym'))
                 args.append('-pic' if cls._ASMEXE == t else '-kick1hunks')
-            args.extend(('-m68000', '-no-fpu', '-o', p, p + '.asm'))
+            args.extend(('-m68000', '-no-fpu', '-showopt', '-o', p, p + '.asm'))
             subprocess.check_call(args)
     @classmethod
     def _rm(cls, item):
