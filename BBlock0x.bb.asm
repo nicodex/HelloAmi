@@ -1,8 +1,22 @@
-; vasmm68k_mot[_<HOST>] -Fbin -pic -o BBlock0x.bb BBlock0x.bb.asm
+; vasmm68k_mot -Fbin -pic -m68000 -no-fpu -no-opt -o BBlock0x.bb BBlock0x.bb.asm
+
+	ifnd BBLOCK0X_DOSVER
+	; ID_DOS_DISK         'DOS',0
+	; ID_FFS_DISK         'DOS',1
+	; ID_INTER_DOS_DISK   'DOS',2
+	; ID_INTER_FFS_DISK   'DOS',3
+	; ID_FASTDIR_DOS_DISK 'DOS',4
+	; ID_FASTDIR_FFS_DISK 'DOS',5
+BBLOCK0X_DOSVER EQU 0
+	endif
+	ifnd BBLOCK0X_CHKSUM
+BBLOCK0X_CHKSUM EQU ~((~$D85BE1EC)+BBLOCK0X_DOSVER)
+	endif
+
 BBlock0x:
-		dc.b	'DOS',0         ; BB_ID = BBID_DOS
-		dc.l	$D85BE1EC       ; BB_CHKSUM (BBlock0x.bb.py)
-		dc.l	880             ; BB_DOSBLOCK = ST_ROOT sector
+		dc.b	'DOS',BBLOCK0X_DOSVER    ; BB_ID = BBID_DOS + version
+		dc.l	BBLOCK0X_CHKSUM          ; BB_CHKSUM (BBlock0x.bb.py)
+		dc.l	880                      ; BB_DOSBLOCK = dos root key
 ;
 ; BootBlock entry point
 ;
