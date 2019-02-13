@@ -6,4 +6,5 @@
 *.info binary
 *.library binary
 *.py text eol=lf
-S/Startup-Sequence text eol=lf
+*.readme text working-tree-encoding=ISO-8859-1 eol=lf
+S/Startup-Sequence text working-tree-encoding=ISO-8859-1 eol=lf
