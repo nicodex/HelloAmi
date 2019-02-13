@@ -8,8 +8,12 @@ Libs/icon.library
 Libs/version.library
 
 # dependencies
-cstruct
 vasm
+
+# obsolete
+C/EndCLI
+C/LoadWB
+cstruct
 
 # local
 *.adf
@@ -25,6 +29,4 @@ vasm
 *-crop-*.png
 *-full-*.png
 *-real-*.png
-C/EndCLI
-C/LoadWB
 
