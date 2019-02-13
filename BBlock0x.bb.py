@@ -64,7 +64,7 @@ class BBlock0x:
                         break
             subprocess.check_call(
                 [cls._vasmm68k_mot, '-quiet',
-                '-Fbin', '-m68000', '-no-fpu',
+                '-Fbin', '-pic', '-m68000', '-no-fpu', '-no-opt',
                 '-o', p, p + '.asm'])
         with open(p, 'r+b') as f:
             b = BootBlock.from_rawio(f)
