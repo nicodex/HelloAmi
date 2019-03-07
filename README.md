@@ -7,7 +7,7 @@ Just another "Hello, World!" for AmigaOS in m68k assembly language.
 About
 -----
 
-This project contains some basic classic AmigaOS (1.0-3.1) examples:  
+This project contains some basic examples for the classic AmigaOS (1.0-3.1):  
   - [`HelloAmi`](HelloAmi.asm)  
     Combined CLI/Workbench tool that uses the `dos.library`
     to write "Hello, World!" to the current console output
@@ -67,7 +67,7 @@ Tests
 -----
 
 The binaries and the disk image have been tested with the following ROMs
-(included in [Amiga Forever](https://www.amigaforever.com/) 8 Plus Edition):
+(included in [Amiga Forever](https://www.amigaforever.com/) Plus Edition):
 
 | ROM                       | BootBlock | HelloAmi | LoadWB | EndCLI |
 |:--------------------------|:---------:|:--------:|:------:|:------:|
@@ -93,13 +93,11 @@ The binaries and the disk image have been tested with the following ROMs
 | `aros-20181209[-ext].rom` |     +     |    +     |   +    |   -    |
 | FS-UAE `internal` **      |     +     |    +     |   +    |   -    |
 
-  - `*` requires `Libs/workbench.library` on disk (not included in ROM)  
-    Can be downloaded for free from the
-    [Cloanto Web Workbench](https://www.amigaforever.com/classic/)
+  - `*` requires `Libs/workbench.library` on disk (not included in ROM)
   - `**` as of this writing AROS `Version SVN50730, built on 2015-05-20`
 
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
-`test/fs-uae/` (you might have to import the Amiga Forever ROMs first).
+`test/fs-uae/` (you have to import the referenced Kickstarts first).
 The Amiga Forever `3.X` ROMs have not been tested, because the
 `workbench.library` is missing (like in the `amiga-os-310-a4000t.rom`).
 
@@ -127,12 +125,19 @@ Grabs
 ![Amiga 3.1 (A600)](test/fs-uae/H/HelloAmi-amiga-os-310-a600.png)
 ### Amiga 3.1 (A1200)
 ![Amiga 3.1 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-310-a1200.png)
-### Amiga 3.1 (A4000T) + workbench.library 40.5 (24.5.93)
+### Amiga 3.1 (A4000T)
+  - `Libs/workbench.library` 40.5 (24.5.93) added
 ![Amiga 3.1 (A4000T)](test/fs-uae/H/HelloAmi-amiga-os-310-a4000t.png)
 ### Amiga 3.2 (beta)
 ![Amiga 3.2 (beta)](test/fs-uae/H/HelloAmi-amiga-os-320-walker.png)
 ### AROS 20181209
 ![AROS 20181209](test/fs-uae/H/HelloAmi-aros-20181209.png)
+### Amiga 3.1.4 (A500)
+  - `C/LoadWB` 45.2 (3.5.2018) added
+  - `Libs/icon.library` 45.22 (24.9.2018) added
+  - `Libs/workbench.library` 45.194 (23.9.2018) added
+  - `S/Startup-Sequence` modified
+![Amiga 3.1.4 (A500)](test/fs-uae/H/HelloAmi-kick.a500.46.143.png)
 
 
 Aside
