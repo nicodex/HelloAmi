@@ -106,37 +106,68 @@ Grabs
 -----
 
 ### Amiga 0.7 (NTSC, Beta)
+
 ![Amiga 0.7 (NTSC, Beta)](test/fs-uae/H/HelloAmi-amiga-os-070.png)
+
 ### Amiga 1.0 (NTSC)
+
 ![Amiga 1.0 (NTSC)](test/fs-uae/H/HelloAmi-amiga-os-100.png)
+
 ### Amiga 1.1 (NTSC)
+
 ![Amiga 1.1 (NTSC)](test/fs-uae/H/HelloAmi-amiga-os-110-ntsc.png)
+
 ### Amiga 1.2
+
 ![Amiga 1.2](test/fs-uae/H/HelloAmi-amiga-os-120.png)
+
 ### Amiga 1.3
+
 ![Amiga 1.3](test/fs-uae/H/HelloAmi-amiga-os-130.png)
+
 ### Amiga 2.04  
+
 ![Amiga 2.04](test/fs-uae/H/HelloAmi-amiga-os-204.png)
+
 ### Amiga 2.05 (A600)
+
 ![Amiga 2.05 (A600)](test/fs-uae/H/HelloAmi-amiga-os-205-a600.png)
+
 ### Amiga 3.0 (A1200)
+
 ![Amiga 3.0 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-300-a1200.png)
+
 ### Amiga 3.1 (A600)
+
 ![Amiga 3.1 (A600)](test/fs-uae/H/HelloAmi-amiga-os-310-a600.png)
+
 ### Amiga 3.1 (A1200)
+
 ![Amiga 3.1 (A1200)](test/fs-uae/H/HelloAmi-amiga-os-310-a1200.png)
+
 ### Amiga 3.1 (A4000T)
-  - `Libs/workbench.library` 40.5 (24.5.93) added
+
+- `Libs/workbench.library` 40.5 (24.5.93) added
+
+[//]: # (HelloAmi-amiga-os-310-a4000t)
 ![Amiga 3.1 (A4000T)](test/fs-uae/H/HelloAmi-amiga-os-310-a4000t.png)
+
 ### Amiga 3.2 (beta)
+
 ![Amiga 3.2 (beta)](test/fs-uae/H/HelloAmi-amiga-os-320-walker.png)
+
 ### AROS 20181209
+
 ![AROS 20181209](test/fs-uae/H/HelloAmi-aros-20181209.png)
+
 ### Amiga 3.1.4 (A500)
-  - `C/LoadWB` 45.2 (3.5.2018) added
-  - `Libs/icon.library` 45.22 (24.9.2018) added
-  - `Libs/workbench.library` 45.194 (23.9.2018) added
-  - `S/Startup-Sequence` modified
+
+- `C/LoadWB` 45.2 (3.5.2018) added
+- `Libs/icon.library` 45.22 (24.9.2018) added
+- `Libs/workbench.library` 45.194 (23.9.2018) added
+- `S/Startup-Sequence` modified
+
+[//]: # (HelloAmi-kick.a500.46.143)
 ![Amiga 3.1.4 (A500)](test/fs-uae/H/HelloAmi-kick.a500.46.143.png)
 
 
