@@ -52,6 +52,7 @@ Dependencies:
   the build script expects to find the compiler executable with
   `vasm/vasmm68k_mot*` (e.g. `vasm\vasmm68k_mot_win32.exe` on Windows).
 - [Python](https://www.python.org/) 2.5 or newer for the build scripts
+  (replace the `python3` command with `python` if you still use Python 2).
 
 No external headers or include files (e.g. Amiga NDK) are required
 because all used offsets and constants are hard-coded in the source.
@@ -59,13 +60,13 @@ because all used offsets and constants are hard-coded in the source.
 To compile all sources and build the disk image, just
 run the following command in the project directory:
 
-> `python HelloAmi.adf.py rebuild`
+> `python3 HelloAmi.adf.py rebuild`
 
 If you want to use another assembler compiler/linker:
 
-- `python HelloAmi.adf.py clean`
+- `python3 HelloAmi.adf.py clean`
 - compile/link all *.asm
-- `python HelloAmi.adf.py build`
+- `python3 HelloAmi.adf.py build`
 
 
 Tests

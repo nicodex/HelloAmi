@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # https://www.python.org/dev/peps/pep-0343/#transition-plan
 from __future__ import with_statement
