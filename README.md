@@ -27,7 +27,7 @@ project has grown to allow starting the ROM Workbench:
   task from V1.x ROMs without the need for the original Workbench disk
   (which you otherwise must own/buy).  
   Also supports the CLI command-line template `LoadWB/S,DELAY/S,EndCLI/S`.
-  Therefore, you can execute `Libs/icon.library EndCLI`
+  Therefore, you can execute `Libs/icon.library EndCLI <>NIL:`
   to close the initial CLI on 1.x ROMs
   (on 2.x/3.x/AROS you should prefer the internal `EndCLI` command).
 - [`Libs/version.library`](Libs/version.library.asm)  
@@ -95,12 +95,14 @@ The binaries and the disk image have been tested with the following ROMs
 | `amiga-os-310-a4000.rom`  |     +     |    +     |   +    |   +    |
 | `amiga-os-310-a4000t.rom` |     +     |    +     |  `*`   |   +    |
 | `amiga-os-320-walker.rom` |     +     |    +     |   +    |   +    |
-| `aros-20170328[-ext].rom` |     +     |    +     |   +    |   -    |
-| `aros-20181209[-ext].rom` |     +     |    +     |   +    |   -    |
+| `aros-20170328[-ext].rom` |     +     |    +     |   +    | `***`  |
+| `aros-20181209[-ext].rom` |     +     |    +     |   +    | `***`  |
+| `aros-20210207[-ext].rom` |     +     |    +     |   +    | `***`  |
 | FS-UAE internal `**`      |     +     |    +     |   +    |   -    |
 
 - `*` requires `Libs/workbench.library` on disk (not included in ROM)
 - `**` as of this writing AROS `Version SVN50730, built on 2015-05-20`
+- `***` has to be the last line in Startup-Sequence without a newline
 
 Test configurations for [FS-UAE](https://fs-uae.net/) are included in
 `test/fs-uae/` (you have to import the referenced Kickstarts first).
@@ -162,9 +164,9 @@ Grabs
 
 ![Amiga 3.2 (beta)](test/fs-uae/H/HelloAmi-amiga-os-320-walker.png)
 
-### AROS 20181209
+### AROS 20210207
 
-![AROS 20181209](test/fs-uae/H/HelloAmi-aros-20181209.png)
+![AROS 20210207](test/fs-uae/H/HelloAmi-aros-20210207.png)
 
 ### Amiga 3.1.4 (A500)
 
