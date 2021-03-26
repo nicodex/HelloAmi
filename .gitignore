@@ -1,28 +1,32 @@
 # build
 BBlock0x.bb
+BBlock0x.dos*.bb
 Disk.info
 HelloAmi
 HelloAmi.adf
 HelloAmi.info
 Libs/icon.library
 Libs/version.library
-
-# dependencies
-vasm
-
-# obsolete
+# custom
 C/EndCLI
 C/LoadWB
+Libs/info.library
+Libs/workbench.library
+
+# dependencies
 cstruct
+vasm
 
 # local
 *.adf
 *.bak
 *.bat
+*.bb
 *.cmd
 *.h68
 *.idb
 *.idc
+*.lha
 *.library
 *.rp9
 *.sh

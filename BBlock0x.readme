@@ -3,12 +3,12 @@ Uploader:     nico@nicode.net (Nico Bendlin)
 Author:       nico@nicode.net (Nico Bendlin)
 Type:         disk/misc
 Architecture: m68k-amigaos
-Version:      3.5
+Version:      3.6
 Distribution: Aminet
 Kurz:         Bootblock (auch) für Beta-Kickstarts
 
 The BBlock0x.bb is a generic OFS bootblock that loads DOS with any
-tested Amiga Kickstart (included in Amiga Forever 8 Plus Edition).
+tested Amiga Kickstart (included in Amiga Forever 9 Plus Edition).
 
 While testing a custom bootblock I stumbled over an issue with the
 Kickstart Beta 0.7 (the I/O request in A1 has to be preserved, and
