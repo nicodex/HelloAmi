@@ -6,6 +6,7 @@ developer = Nico Bendlin <nico@nicode.net>
 floppies_dir = $CONFIG/../../
 floppy_drive_0 = HelloAmi.adf
 floppy_image_0 = HelloAmi.adf
+governor_warning = 0
 homepage_url = https://github.com/nicodex/HelloAmi
 kickstart_file = kick.a4000t.46.143
 save_states = 0
