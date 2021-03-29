@@ -72,10 +72,10 @@ IconLibrary:
 		dc.l	.resIdString    ; RT_IDSTRING
 		dc.l	.resAuto        ; RT_INIT
 .resName:
-		dc.b	"icon.library",0
-		dc.b	"$VER: "
+		dc.b	"icon.library";0
+		dc.b	0,"$VER: "
 .resIdString:
-		dc.b	"icon 35.2 (9.9.99) [NicoDE]",13,10,0
+		dc.b	"icon 35.3 (29.3.2021)",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -132,7 +132,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	35,2
+		dc.w	35,3
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -233,16 +233,21 @@ IconLibrary:
 		lsl.l	#2,d7
 		movea.l	d7,a2
 		lea	$001C(a2),a1    ; cli_StandardInput
-		movea.l	(a1)+,a0
-		lea	(a0,a0.l),a3
-		clr.l	$0014(a3,a3.l)  ; fh_End
+		move.l	(a1)+,a3
+		move.l	(a1),d1         ; (cli_CurrentInput)
+		beq.b	.cinDone
+		cmp.l	a3,d1
+		beq.b	.cinDone
+		move.l	a3,(a1)
+		jsr	-$0024(a6)      ; _LVOClose
+.cinDone:
 		moveq	#-1,d0          ; DOSTRUE
 		move.l	d0,$002C(a2)    ; cli_Background
-		cmpa.l	(a1),a0         ; (cli_CurrentInput)
-		beq.b	.argDone
-		move.l	(a1),d1
-		move.l	a0,(a1)
-		jsr	-$0024(a6)      ; _LVOClose
+		adda.l	a3,a3
+		lea	$0014(a3,a3.l),a3
+		move.l	(a3),d0         ; (fh_End)
+		clr.l	(a3)
+		move.l	d0,-(a3)        ; (fh_Pos)
 .argDone:
 		movea.l	a6,a1
 		movea.l	(4).w,a6        ; AbsExecBase
