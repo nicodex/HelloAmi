@@ -20,9 +20,8 @@ VersionLibrary:
 		dc.l	.resAuto        ; RT_INIT
 .resName:
 		dc.b	"version.library",0
-		dc.b	"$VER: "
 .resIdString:
-		dc.b	"wbver 0.0 (9.9.99) [HelloAmi]",13,10,0
+		dc.b	"version 0.0 (9.9.99) HelloAmi",13,10,0
 .wbtName:
 		dc.b	"workbench.task",0
 .wblName:
