@@ -72,10 +72,9 @@ IconLibrary:
 		dc.l	.resIdString    ; RT_IDSTRING
 		dc.l	.resAuto        ; RT_INIT
 .resName:
-		dc.b	"icon.library";0
-		dc.b	0,"$VER: "
+		dc.b	"icon.library",0
 .resIdString:
-		dc.b	"icon 35.3 (29.3.2021)",13,10,0
+		dc.b	"icon 35.4 (9.9.99) BootWB1x",13,10,0
 .dosName:
 		dc.b	"dos.library";0
 	align	1
@@ -132,7 +131,7 @@ IconLibrary:
 		dc.b	$02!$04         ; LIBF_SUMUSED!LIBF_CHANGED
 	align	1
 		dc.b	%10000001,$14   ; LIB_VERSION/LIB_REVISION/LIB_IDSTRING
-		dc.w	35,3
+		dc.w	35,4
 		dc.l	.resIdString
 	align	1
 		dc.b	%00000000
@@ -148,7 +147,7 @@ IconLibrary:
 ; 	any registers (except SP) are allowed to be modified
 ;
 .execArg:
-		dc.b	"LoadWB"
+		dc.b	"LoadWB"        ; -debug
 		dc.b	"DELAY"
 		dc.b	"EndCLI"
 .wbtName:
@@ -166,13 +165,10 @@ IconLibrary:
 		move.l	d0,d5
 		ble.b	.execRts
 		lea	.wbtName(pc),a1
-		move.l	a1,d6
 		jsr	-$0060(a6)      ; _LVOFindResident
 		move.l	d0,d3
 		lea	.dosName(pc),a1
 		jsr	-$0198(a6)      ; _LVOOldOpenLibrary
-		tst.l	d0
-		beq.b	.execRts
 		movea.l	d0,a6
 		pea	.LoadWB(pc)
 .tstArg6:
@@ -200,22 +196,23 @@ IconLibrary:
 		rts
 .LoadWB:
 		bne.b	.DELAY
+		addq.l	#2,d3           ; RT_SIZE % 4 (nop for V1.2/V1.3)
 		lsr.l	#2,d3
 		beq.b	.DELAY
+		addq.l	#($001A+8)/4,d3 ; MKBADDR(RT_SIZE + "-debug")
 		moveq	#-1,d1
 		move.l	d1,$00B8(a4)    ; pr_WindowPtr
 		moveq	#0,d1
-		move.l	d6,-(sp)
 		move.l	$00A4(a4),d6    ; pr_ConsoleTask
 		move.l	d1,$00A4(a4)    ; pr_ConsoleTask
 		move.l	d1,$00AC(a4)    ; pr_CLI
 		jsr	-$007E(a6)      ; _LVOCurrentDir
-		move.l	(sp),d1
-		move.l	d0,(sp)
+		move.l	d0,-(sp)
+		pea	.wbtName(pc)
+		move.l	(sp)+,d1
 		moveq	#1,d2
-		addq.l	#($001A+2)/4,d3 ; RT_SIZE (BPTR-aligned)
-		moveq	#6144>>6,d4
-		lsl.l	#6,d4
+		pea	(6000).w
+		move.l	(sp)+,d4
 		jsr	-$008A(a6)      ; _LVOCreateProc
 		move.l	(sp)+,d1
 		jsr	-$007E(a6)      ; _LVOCurrentDir
