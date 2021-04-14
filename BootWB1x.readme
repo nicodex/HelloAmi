@@ -2,7 +2,7 @@ Short:        Minimal boot into Workbench 1.0-3.2
 Author:       nico@nicode.net (Nico Bendlin)
 Uploader:     nico@nicode.net (Nico Bendlin)
 Type:         disk/misc
-Version:      35.3
+Version:      35.4
 Architecture: m68k-amigaos >= 1.0.0
 Distribution: Aminet
 Kurz:         Minimaler Start in Workbench 1.0-3.2
