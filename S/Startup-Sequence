@@ -1,2 +1,2 @@
-HelloAmi:HelloAmi
-HelloAmi:Libs/icon.library LoadWB DELAY EndCLI
+SYS:HelloAmi
+SYS:Libs/icon.library LoadWB DELAY EndCLI
