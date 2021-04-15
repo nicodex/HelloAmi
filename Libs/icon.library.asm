@@ -54,6 +54,10 @@ IconLibrary:
 		; With 14 of 1760 DD OFS blocks used, there's space
 		; left for a single file with 820 KB (839848 bytes,
 		; needs 1 FileHeaderBlock every 72 FileDataBlocks).
+		; Well, you can even move the icon.library into the
+		; root directory of the disk to save another sector
+		; for the Libs drawer, and the startup will be even
+		; faster (now everything fits into a single track).
 		;
 		; Keep this a WORD branch here (makes it easier to
 		; disable this feature by replacing this code with
