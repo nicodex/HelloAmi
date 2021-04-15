@@ -2,12 +2,14 @@
 
 [fs-uae]
 amiga_model = A1200
+console_debugger = 1
 developer = Nico Bendlin <nico@nicode.net>
 floppies_dir = $CONFIG/../../
 floppy_drive_0 = HelloAmi.adf
 floppy_image_0 = HelloAmi.adf
 governor_warning = 0
 homepage_url = https://github.com/nicodex/HelloAmi
+initial_input_grab = 0
 kickstart_file = amiga-os-310-a1200.rom
 save_states = 0
 save_states_dir = $CONFIG/
