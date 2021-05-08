@@ -3,8 +3,8 @@ V36 Workbench default icon usage
 --------------------------------
 
 At least with Workbench 36.1524 (1990-03-20) in Kickstart 36.028 "2.0 Beta"
-the icon.library/GetDefDiskObject() is required and has to be implemented.  
-At least with Kickstart 36.067 "2.0 Beta" the icon.library in included.  
+the icon.library/GetDefDiskObject() is required and has to be implemented.
+At least with Kickstart 36.067 "2.0 Beta" the icon.library in included.
 
 - disk: icon 36.201 (31 May 1989) [1.4 Alpha 15]
   - no GetDefDiskObject/PutDefDiskObject
@@ -22,7 +22,7 @@ V36 ROM default 4 color settings
 --------------------------------
 
 Notice the transition from blue to dark/light gray
-(don#t get confused by the HTML/CSS color names).
+(don't get confused by the HTML/CSS color names).
 
 |  color0   |  color1   |  color2   |  color3   | Kickstart                               |
 |:----------|:----------|:----------|:----------|:----------------------------------------|
