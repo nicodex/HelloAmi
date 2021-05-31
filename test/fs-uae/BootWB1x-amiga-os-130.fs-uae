@@ -1,7 +1,7 @@
 #!/usr/bin/env fs-uae
 
 [fs-uae]
-amiga_model = A1000
+amiga_model = A500
 console_debugger = 1
 developer = Nico Bendlin <nico@nicode.net>
 floppies_dir = $CONFIG/../../
@@ -10,12 +10,11 @@ floppy_image_0 = BootWB1x.adf
 governor_warning = 0
 homepage_url = https://github.com/nicodex/HelloAmi
 initial_input_grab = 0
-kickstart_file = amiga-os-100.rom
-ntsc_mode = 1
+kickstart_file = amiga-os-130.rom
 save_states = 0
 save_states_dir = $CONFIG/
 screenshots_output_dir = $CONFIG/
 screenshots_output_mask = 2
-screenshots_output_prefix = BootWB1x-amiga-os-100
-sub_title = Amiga 1.0 (NTSC)
+screenshots_output_prefix = BootWB1x-amiga-os-130
+sub_title = Amiga 1.3
 title = BootWB1x

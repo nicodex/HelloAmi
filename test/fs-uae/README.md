@@ -14,7 +14,6 @@ Grabs
 
 ### Amiga 1.0 (NTSC)
 
-![BootWB1x - Amiga 1.0 (NTSC)](B/BootWB1x-amiga-os-100.png)  
 ![HelloAmi - Amiga 1.0 (NTSC)](H/HelloAmi-amiga-os-100.png)
 
 ### Amiga 1.1 (NTSC)
@@ -27,6 +26,7 @@ Grabs
 
 ### Amiga 1.3
 
+![BootWB1x - Amiga 1.3](B/BootWB1x-amiga-os-130.png)  
 ![HelloAmi - Amiga 1.3](H/HelloAmi-amiga-os-130.png)
 
 ### Amiga 2.04  
