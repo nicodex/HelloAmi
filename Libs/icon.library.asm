@@ -38,7 +38,8 @@ IconLibrary:
 		; However, this little feature can be used to create
 		; a minimal OFS boot floppy that loads the Workbench
 		; with every ROM/Kickstart that includes a Workbench
-		; (missing in A-4000T 3.1 ROM / Cloanto's 3.X ROMs).
+		; (missing in 0.x versions, the Amiga 4000T 3.1 ROM,
+		; Cloanto's 3.X, and Hyperion's 3.1.4/3.2 versions).
 		;     2 BootBlock (e.g. BBlock0x.bb)
 		;     1 RootBlock
 		;     1 BitmapBlock
@@ -52,7 +53,7 @@ IconLibrary:
 		; "Libs/icon.library LoadWB DELAY EndCLI" (DELAY is
 		; optional, used to be included in older startups).
 		; With 14 of 1760 DD OFS blocks used, there's space
-		; left for a single file with 820 KB (839848 bytes,
+		; left for a single file with 820 KB (840336 bytes,
 		; needs 1 FileHeaderBlock every 72 FileDataBlocks).
 		; Well, you can even move the icon.library into the
 		; root directory of the disk to save another sector
