@@ -632,9 +632,20 @@ class HelloAmi:
     _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
     _FILE = 'HelloAmi.adf'
     _LIST = (
+        (_DRAWER, 'C', (
+            (_OPTBIN, 'C/LoadWB', PROT_ARWED),
+            (_OPTBIN, 'C/EndCLI', PROT_ARWED),
+            )),
+        (_DRAWER, 'Devs', ()),
+        (_DRAWER, 'Fonts', ()),
+        (_DRAWER, 'L', ()),
+        (_DRAWER, 'Prefs', (
+            (_DRAWER, 'Env-Archive', ()),
+            )),
         (_DRAWER, 'S', (
             (_OPTBIN, 'S/Startup-Sequence', PROT_SARWD),
             )),
+        (_ASMBIN, 'Disk.info', PROT_ARWD),
         (_ASMEXE, 'HelloAmi', PROT_PARWED),
         (_ASMBIN, 'HelloAmi.info', PROT_ARWD),
         (_DRAWER, 'Libs', (
@@ -648,18 +659,6 @@ class HelloAmi:
             # purchasable at https://www.amigaforever.com/media/
             # not included on release disk (copyright protected)
             (_OPTBIN, 'Libs/info.library', PROT_ARWD),
-            )),
-        (_ASMBIN, 'Disk.info', PROT_ARWD),
-        # includes empty directories for the initial CLI assigns
-        (_DRAWER, 'C', (
-            (_OPTBIN, 'C/LoadWB', PROT_ARWED),
-            (_OPTBIN, 'C/EndCLI', PROT_ARWED),
-            )),
-        (_DRAWER, 'Devs', ()),
-        (_DRAWER, 'Fonts', ()),
-        (_DRAWER, 'L', ()),
-        (_DRAWER, 'Prefs', (
-            (_DRAWER, 'Env-Archive', ()),
             )),
     )
 
