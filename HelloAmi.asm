@@ -61,8 +61,8 @@ HelloAmi:
 		move.l	(sp)+,d2
 		moveq	#.textEnd-.textStr,d3
 		moveq	#-$0030,d6      ; _LVOWrite
-		; use FPuts (buffered output) on DOS version 36+
-		cmpi.w	#36,$0014(a6)   ; LIB_VERSION
+		; use FPuts (buffered output) on DOS version 37+
+		cmpi.w	#37,$0014(a6)   ; LIB_VERSION
 		blo.b	.writeStr
 		subi.w	#$0156-$0030,d6 ; -_LVOFPuts+_LVOWrite
 		moveq	#0,d3

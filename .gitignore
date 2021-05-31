@@ -8,10 +8,8 @@ HelloAmi.info
 Libs/icon.library
 Libs/version.library
 # custom
-C/EndCLI
-C/LoadWB
-Libs/info.library
-Libs/workbench.library
+C/*
+Libs/*
 
 # dependencies
 cstruct
@@ -27,10 +25,10 @@ vasm
 *.idb
 *.idc
 *.lha
-*.library
 *.rp9
-*.sh
 *-crop-*.png
 *-full-*.png
 *-real-*.png
+Kickstarts
+temp
 
