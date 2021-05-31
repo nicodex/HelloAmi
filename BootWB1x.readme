@@ -1,15 +1,15 @@
-Short:        Minimal boot into Workbench 1.0-3.2
+Short:        Minimal boot into Workbench 1.0-3.1
 Author:       nico@nicode.net (Nico Bendlin)
 Uploader:     nico@nicode.net (Nico Bendlin)
 Type:         disk/misc
-Version:      35.4
+Version:      3.7.1
 Architecture: m68k-amigaos >= 1.0.0
 Distribution: Aminet
-Kurz:         Minimaler Start in Workbench 1.0-3.2
+Kurz:         Minimaler Start in Workbench 1.0-3.1
 
-The BootWB1x.adf is a minimal boot floppy to load any Kickstart
-1.0-3.2 Workbench (not included in Kickstart 0.x beta versions,
-A-4000T 3.1 ROM, and Cloanto's 3.X ROMs). This disk includes an
+The BootWB1x.adf is a minimal boot floppy to load the Kickstart
+Workbench (1.0-3.1 - missing in 0.x betas, Amiga 4000T 3.1 ROM,
+Cloanto's 3.X, and Hyperion's 3.1.4/3.2). This disk includes an
 implementation of a v1.x libs/icon.library replacement to allow
 creating the Workbench task from v1.x ROMs without the need for
 the original Workbench disk (which you otherwise must own/buy).
@@ -17,7 +17,7 @@ To save even more space the icon.library has a CLI command-line
 interface that implements LoadWB and EndCLI. In 2.0+ Kickstarts
 the icon.library is already included and the disk version isn't
 used by the Workbench (due to the lower version number). In the
-end, there're 1746 free blocks (max: single 839848 bytes file).
+end, there're 1747 free blocks (max: single 840824 bytes file).
 
 The source code can also be found at:
 <https://github.com/nicodex/HelloAmi>
