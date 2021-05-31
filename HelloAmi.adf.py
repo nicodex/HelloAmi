@@ -573,36 +573,6 @@ class OFSDisk:
 
 
 class HelloAmi:
-    _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
-    _FILE = 'HelloAmi.adf'
-    _LIST = (
-        # includes empty directories for the initial CLI assigns
-        (_DRAWER, 'C', ()),
-        (_DRAWER, 'Devs', ()),
-        (_ASMBIN, 'Disk.info', PROT_ARWD),
-        (_DRAWER, 'Fonts', ()),
-        (_ASMEXE, 'HelloAmi', PROT_PARWED),
-        (_ASMBIN, 'HelloAmi.info', PROT_ARWD),
-        (_DRAWER, 'L', ()),
-        (_DRAWER, 'Libs', (
-            (_ASMLIB, 'Libs/icon.library', PROT_ARWED),
-            # optional for testing the icon.library (1.x ROM/WB)
-            # purchasable at https://www.amigaforever.com/media/
-            # not included on release disk (copyright protected)
-            (_OPTBIN, 'Libs/info.library', PROT_ARWED),
-            (_ASMLIB, 'Libs/version.library', PROT_ARWED),
-            # optional for A-4000T 3.1 ROM or Cloanto's 3.X ROMs
-            # see https://www.amigaforever.com/classic/download/
-            # not included on release disk (known to break AROS)
-            (_OPTBIN, 'Libs/workbench.library', PROT_ARWED),
-            )),
-        (_DRAWER, 'Prefs', (
-            (_DRAWER, 'Env-Archive', ()),
-            )),
-        (_DRAWER, 'S', (
-            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWD),
-            )),
-    )
     _vasmm68k_mot = os.path.join('vasm', 'vasmm68k_mot')
     @classmethod
     def _add(cls, adf, dir, item, mdays):
@@ -659,12 +629,51 @@ class HelloAmi:
             os.remove(cls._FILE)
         for i in cls._LIST:
             cls._rm(i)
+    _DRAWER, _ASMBIN, _ASMEXE, _ASMLIB, _OPTBIN = range(5)
+    _FILE = 'HelloAmi.adf'
+    _LIST = (
+        (_DRAWER, 'S', (
+            (_OPTBIN, 'S/Startup-Sequence', PROT_SARWD),
+            )),
+        (_ASMEXE, 'HelloAmi', PROT_PARWED),
+        (_ASMBIN, 'HelloAmi.info', PROT_ARWD),
+        (_DRAWER, 'Libs', (
+            (_ASMLIB, 'Libs/icon.library', PROT_ARWED),
+            (_ASMLIB, 'Libs/version.library', PROT_ARWD),
+            # optional for A-4000T 3.1 ROM or Cloanto's 3.X ROMs
+            # see https://www.amigaforever.com/classic/download/
+            # not included on release disk (known to break AROS)
+            (_OPTBIN, 'Libs/workbench.library', PROT_ARWD),
+            # optional for testing the icon.library (1.x ROM/WB)
+            # purchasable at https://www.amigaforever.com/media/
+            # not included on release disk (copyright protected)
+            (_OPTBIN, 'Libs/info.library', PROT_ARWD),
+            )),
+        (_ASMBIN, 'Disk.info', PROT_ARWD),
+        # includes empty directories for the initial CLI assigns
+        (_DRAWER, 'C', (
+            (_OPTBIN, 'C/LoadWB', PROT_ARWED),
+            (_OPTBIN, 'C/EndCLI', PROT_ARWED),
+            )),
+        (_DRAWER, 'Devs', ()),
+        (_DRAWER, 'Fonts', ()),
+        (_DRAWER, 'L', ()),
+        (_DRAWER, 'Prefs', (
+            (_DRAWER, 'Env-Archive', ()),
+            )),
+    )
 
 def main(argv):
-    if (len(argv) > 1) and (argv[1] in ('clean', 'rebuild')):
+    if (len(argv) > 2) and (argv[1] in ('release')):
+        mdays = DateStamp.gmtime(secs=calendar.timegm(
+            datetime.datetime.strptime(
+                argv[2], '%Y-%m-%dT%H:%M:%S').utctimetuple()))
+    else:
+        mdays = None
+    if (len(argv) > 1) and (argv[1] in ('clean', 'rebuild', 'release')):
         HelloAmi.clean()
-    if (len(argv) <= 1) or (argv[1] in ('build', 'rebuild')):
-        HelloAmi.build()
+    if (len(argv) <= 1) or (argv[1] in ('build', 'rebuild', 'release')):
+        HelloAmi.build(mdays=mdays)
 
 if __name__ == '__main__':
     main(sys.argv)
