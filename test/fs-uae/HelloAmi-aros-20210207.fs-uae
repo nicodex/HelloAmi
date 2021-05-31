@@ -17,5 +17,5 @@ save_states_dir = $CONFIG/
 screenshots_output_dir = $CONFIG/
 screenshots_output_mask = 2
 screenshots_output_prefix = HelloAmi-aros-20210207
-sub_title = AROS 20210207
+sub_title = AROS (2021-02-07)
 title = HelloAmi

@@ -16,5 +16,5 @@ save_states_dir = $CONFIG/
 screenshots_output_dir = $CONFIG/
 screenshots_output_mask = 2
 screenshots_output_prefix = HelloAmi-amiga-os-320-walker
-sub_title = Amiga 3.2 (beta)
+sub_title = Amiga 3.2 (Walker)
 title = HelloAmi

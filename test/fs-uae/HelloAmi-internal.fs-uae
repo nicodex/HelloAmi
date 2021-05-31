@@ -16,5 +16,5 @@ save_states_dir = $CONFIG/
 screenshots_output_dir = $CONFIG/
 screenshots_output_mask = 2
 screenshots_output_prefix = HelloAmi-internal
-sub_title = FS-UAE internal ROM
+sub_title = FS-UAE (internal)
 title = HelloAmi
