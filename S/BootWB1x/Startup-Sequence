@@ -1,0 +1,13 @@
+; LoadWB requires a Kickstart that includes a Workbench.
+; It will NOT work with:
+; - 0.x Beta versions
+; - 1.4 and early 2.0 Beta versions
+; - 3.1 A4000T version
+; - 3.X (Cloanto) versions
+; - 3.1.4 (Hyperion) versions
+; - 3.2 (Hyperion) versions
+SYS:icon.library LoadWB
+; EndCLI is an internal command in AmigaDOS 2.x onwards.
+; On earlier AmigaDOS versions it fails (the Initial CLI
+; remains open, use `SYS:icon.library EndCLI` to close).
+EndCLI >NIL:
