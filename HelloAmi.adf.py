@@ -87,7 +87,7 @@ class DateStamp(StructBase):
             f += ':%M'
             if i >= 3:
                 f += ':%S'
-        s = string.replace(time.strftime(f, time.gmtime(q)), '_', sep)
+        s = time.strftime(f, time.gmtime(q)).replace('_', sep)
         if i >= 4:
             if i >= 5:
                 if i >= 6:
